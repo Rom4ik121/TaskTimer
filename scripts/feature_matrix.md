@@ -1,4 +1,4 @@
-# TaskTimer — матрица фич (волны A–AR)
+# TaskTimer — матрица фич (волны A–AS)
 
 Краткий one-pager возможностей. Локальное приложение (Flet + SQLite).
 
@@ -53,3 +53,5 @@
 
 | **AQ** | Холст infinite canvas + MD vault (`data/notes`), schema 13, FEATURE 72 |
 | **AR** | PIN-лок (PBKDF2) + splash/setup/lock + `assets/icon.png`, FEATURE 73 |
+| **AS** | iOS IPA ready: pyproject / fullscreen iPhone / icon_ios / IOS_BUILD.md, FEATURE 74 | Packaging, main |
+

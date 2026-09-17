@@ -11,7 +11,7 @@
 - SQLAlchemy 2.x + SQLite
 - Pydantic v2
 
-## Возможности (Waves A–AR)
+## Возможности (Waves A–AS)
 
 1. CRUD задач (статус / приоритет / срок / метка / связь с целью / **архив**)
 2. **Повторяющиеся задачи** — `recur_rule` none|daily|weekly + `recur_anchor`; при «Готово» спавнится новая todo со сдвинутым сроком, пометкой «из повтора» и **копией открытых подзадач**; опция `archive_on_recur_done` архивирует родителя
@@ -94,6 +94,7 @@
 71. **Wave AP — тап заметки → Фокус**: в Аналитике тап по snippet открывает экран Фокуса (`on_open_focus`); иначе копирует в буфер
 72. **Wave AQ — Холст + Markdown vault**: бесконечный pan/zoom холст (вкладка «Холст»), секции = `.md` файлы в `data/notes/`, редактор Preview/Edit (GFM), schema 13 (`canvas_nodes` / `canvas_edges`)
 73. **Wave AR — PIN-лок и иконка**: первый запуск (splash → онбординг → настройка PIN / «Настроить позже»); повторный запуск с локом — экран PIN; солёный PBKDF2-хеш; Face ID-переключатель с fallback на desktop; `assets/icon.png`
+74. **Wave AS — iOS IPA ready**: `pyproject.toml` / fullscreen iPhone layout / `icon_ios.png` / docs/IOS_BUILD.md; FEATURE_COUNT 74
 
 ## Быстрая установка (Windows)
 
@@ -166,6 +167,7 @@ SQLite: `data/tasktimer.db` (создаётся автоматически).
 
 Версия схемы: `SCHEMA_VERSION = 13` в `app_meta`.
 
+- **v13 + Wave AS**: iOS packaging (`pyproject.toml`, fullscreen mobile, `icon_ios.png`, IOS_BUILD.md); FEATURE_COUNT 74; schema 13 без бампа
 - **v13 + Wave AR**: PIN-лок (PBKDF2), splash / setup / lock screens, `assets/icon.png`; FEATURE_COUNT 73; schema 13 без бампа
 - **v13 + Wave AQ**: Infinite canvas tab «Холст»; MD vault `data/notes/`; note editor GFM; canvas_nodes/edges; FEATURE_COUNT 72; schema 12→13
 - **v12 + Wave AP**: Analytics focus-note tap → Focus (`on_open_focus`); clipboard fallback; FEATURE_COUNT 71; schema 12 без бампа
@@ -236,10 +238,18 @@ TaskTimer/
 
 ## Сборка iOS IPA
 
-Требуется macOS + Xcode (Flet iOS build). На Windows / Linux IPA не собрать — это ограничение платформы, не приложения.
+Подробно: **[docs/IOS_BUILD.md](docs/IOS_BUILD.md)**.
+
+- Bundle ID: `com.rom4ik121.tasktimer`
+- На **реальном iPhone** UI на весь экран (без декоративной рамки 390×844); на desktop рамка-превью сохраняется
+- IPA собирается **только на macOS + Xcode 15+** (`flet build ipa` / `flet build ios-simulator`) — не на Windows/Linux
+- `SQLAlchemy==2.0.36` (iOS wheels); Face ID — Info.plist готов, PIN основной до плагина local_auth
+
+```bash
+flet build ios-simulator
+flet build ipa --ios-team-id … --ios-export-method debugging
+```
 
 ## Примечание
 
 Не коммитьте `.venv/`, `__pycache__/`, `data/*.db` в дистрибутив.
-# TaskTimer
-# TaskTimer

@@ -30,7 +30,7 @@ from app.ui.screens.splash import build_splash
 from app.ui.screens.task_detail import build_task_detail
 from app.ui.screens.onboarding import maybe_show_onboarding
 from app.ui.screens.tasks import build_tasks
-from app.ui.theme import ASSETS_DIR, BG, BG_ELEVATED, BORDER, PHONE_H, PHONE_W, apply_accent, apply_theme
+from app.ui.theme import ASSETS_DIR, BG, BG_ELEVATED, BORDER, PHONE_H, PHONE_W, apply_accent, apply_theme, is_mobile_layout
 
 
 _INPUT_TYPE_NAMES = frozenset(
@@ -191,9 +191,14 @@ def main(page: ft.Page) -> None:
     apply_accent(accent)
     apply_theme(page, accent=accent)
     try:
-        page.window.icon = str(ASSETS_DIR / "icon.ico" if (ASSETS_DIR / "icon.ico").is_file() else ASSETS_DIR / "icon.png")
+        lock_service.set_runtime_platform(getattr(page, "platform", None))
     except Exception:
         pass
+    if not is_mobile_layout(page):
+        try:
+            page.window.icon = str(ASSETS_DIR / "icon.ico" if (ASSETS_DIR / "icon.ico").is_file() else ASSETS_DIR / "icon.png")
+        except Exception:
+            pass
 
     state = {
         "tab": 0,
@@ -506,23 +511,59 @@ def main(page: ft.Page) -> None:
             nav_host.visible = True
         page.update()
 
-    phone = ft.Container(
-        content=ft.Column(
-            [
-                content,
-                ft.Container(height=1, bgcolor=BORDER),
-                nav_host,
-            ],
-            spacing=0,
-            expand=True,
-        ),
-        width=PHONE_W,
-        height=PHONE_H,
-        bgcolor=BG,
-        border=ft.Border.all(1, BORDER),
-        border_radius=ft.BorderRadius.all(28),
-        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+    shell_body = ft.Column(
+        [
+            content,
+            ft.Container(height=1, bgcolor=BORDER),
+            nav_host,
+        ],
+        spacing=0,
+        expand=True,
     )
+
+    mobile = is_mobile_layout(page)
+    if mobile:
+        # Real iPhone / Android: full screen, no decorative phone chrome.
+        phone = ft.Container(
+            content=shell_body,
+            expand=True,
+            bgcolor=BG,
+            clip_behavior=ft.ClipBehavior.HARD_EDGE,
+        )
+        try:
+            root = ft.SafeArea(content=phone, expand=True)
+        except Exception:
+            root = ft.Container(
+                content=phone,
+                expand=True,
+                bgcolor=BG,
+                padding=ft.Padding.only(top=12, bottom=8),
+            )
+        page_shell = ft.Container(
+            content=root,
+            alignment=ft.Alignment.CENTER,
+            expand=True,
+            bgcolor=BG,
+            padding=0,
+        )
+    else:
+        # Desktop preview: fixed 390×844 phone frame.
+        phone = ft.Container(
+            content=shell_body,
+            width=PHONE_W,
+            height=PHONE_H,
+            bgcolor=BG,
+            border=ft.Border.all(1, BORDER),
+            border_radius=ft.BorderRadius.all(28),
+            clip_behavior=ft.ClipBehavior.HARD_EDGE,
+        )
+        page_shell = ft.Container(
+            content=phone,
+            alignment=ft.Alignment.CENTER,
+            expand=True,
+            bgcolor=BG_ELEVATED,
+            padding=12,
+        )
 
 
     def on_keyboard(e: ft.KeyboardEvent):
@@ -588,15 +629,7 @@ def main(page: ft.Page) -> None:
 
     page.on_keyboard_event = on_keyboard
 
-    page.add(
-        ft.Container(
-            content=phone,
-            alignment=ft.Alignment.CENTER,
-            expand=True,
-            bgcolor=BG_ELEVATED,
-            padding=12,
-        )
-    )
+    page.add(page_shell)
     render()
     # Launch flow starts on splash; onboarding / PIN / lock follow from after_splash.
 

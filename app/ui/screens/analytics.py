@@ -2,7 +2,14 @@
 from __future__ import annotations
 
 import flet as ft
-import flet_charts as fc
+
+try:
+    import flet_charts as fc
+
+    _HAS_CHARTS = True
+except Exception:  # noqa: BLE001
+    fc = None  # type: ignore[assignment]
+    _HAS_CHARTS = False
 
 from app.db import get_session
 from app.services import analytics_service, goal_service, settings_service, streak_service
@@ -45,61 +52,101 @@ def build_analytics(page: ft.Page, *, refresh_all=None, on_open_focus=None, on_o
             week_done, week_target = analytics_service.weekly_goal_progress(session)
             focus_notes = analytics_service.recent_focus_notes(session, limit=5)
 
-        pie = fc.PieChart(
-            sections=[
-                fc.PieChartSection(
-                    value=max(dist.todo, 0.001), color=MUTED, radius=18, title=f"{dist.todo}"
-                ),
-                fc.PieChartSection(
-                    value=max(dist.in_progress, 0.001),
-                    color=ORANGE,
-                    radius=18,
-                    title=f"{dist.in_progress}",
-                ),
-                fc.PieChartSection(
-                    value=max(dist.done, 0.001), color=GREEN, radius=18, title=f"{dist.done}"
-                ),
-            ],
-            sections_space=2,
-            center_space_color=CARD,
-            center_space_radius=42,
-            width=160,
-            height=160,
-        )
-
-        max_y = max((p.completed for p in points), default=1)
-        max_y = max(max_y, 1)
-        series = fc.LineChartData(
-            curved=True,
-            color=ORANGE,
-            stroke_width=2.5,
-            rounded_stroke_cap=True,
-            below_line_bgcolor="#FF8A0033",
-            points=[fc.LineChartDataPoint(x=i, y=p.completed) for i, p in enumerate(points)],
-        )
-        labels = [
-            fc.ChartAxisLabel(
-                value=i,
-                label=ft.Text(p.day.strftime("%d"), size=9, color=MUTED),
+        if _HAS_CHARTS:
+            pie = fc.PieChart(
+                sections=[
+                    fc.PieChartSection(
+                        value=max(dist.todo, 0.001), color=MUTED, radius=18, title=f"{dist.todo}"
+                    ),
+                    fc.PieChartSection(
+                        value=max(dist.in_progress, 0.001),
+                        color=ORANGE,
+                        radius=18,
+                        title=f"{dist.in_progress}",
+                    ),
+                    fc.PieChartSection(
+                        value=max(dist.done, 0.001), color=GREEN, radius=18, title=f"{dist.done}"
+                    ),
+                ],
+                sections_space=2,
+                center_space_color=CARD,
+                center_space_radius=42,
+                width=160,
+                height=160,
             )
-            for i, p in enumerate(points)
-            if i % 2 == 0
-        ]
-        line = fc.LineChart(
-            data_series=[series],
-            min_y=0,
-            max_y=max_y + 1,
-            min_x=0,
-            max_x=13,
-            bgcolor=CARD,
-            border=ft.Border.all(0, "transparent"),
-            horizontal_grid_lines=fc.ChartGridLines(color="#2A2A32", width=1),
-            vertical_grid_lines=fc.ChartGridLines(color="#1A1A20", width=1),
-            bottom_axis=fc.ChartAxis(labels=labels, label_size=20),
-            left_axis=fc.ChartAxis(label_size=28),
-            height=200,
-            expand=True,
-        )
+
+            max_y = max((p.completed for p in points), default=1)
+            max_y = max(max_y, 1)
+            series = fc.LineChartData(
+                curved=True,
+                color=ORANGE,
+                stroke_width=2.5,
+                rounded_stroke_cap=True,
+                below_line_bgcolor="#FF8A0033",
+                points=[fc.LineChartDataPoint(x=i, y=p.completed) for i, p in enumerate(points)],
+            )
+            labels = [
+                fc.ChartAxisLabel(
+                    value=i,
+                    label=ft.Text(p.day.strftime("%d"), size=9, color=MUTED),
+                )
+                for i, p in enumerate(points)
+                if i % 2 == 0
+            ]
+            line = fc.LineChart(
+                data_series=[series],
+                min_y=0,
+                max_y=max_y + 1,
+                min_x=0,
+                max_x=13,
+                bgcolor=CARD,
+                border=ft.Border.all(0, "transparent"),
+                horizontal_grid_lines=fc.ChartGridLines(color="#2A2A32", width=1),
+                vertical_grid_lines=fc.ChartGridLines(color="#1A1A20", width=1),
+                bottom_axis=fc.ChartAxis(labels=labels, label_size=20),
+                left_axis=fc.ChartAxis(label_size=28),
+                height=200,
+                expand=True,
+            )
+        else:
+            pie = ft.Container(
+                content=ft.Column(
+                    [
+                        ft.Text("Статусы", size=12, color=MUTED),
+                        ft.Text(f"К выполнению: {dist.todo}", size=13, color=TEXT),
+                        ft.Text(f"В работе: {dist.in_progress}", size=13, color=ORANGE),
+                        ft.Text(f"Готово: {dist.done}", size=13, color=GREEN),
+                    ],
+                    spacing=4,
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+                width=160,
+                height=160,
+                alignment=ft.Alignment.CENTER,
+                bgcolor=CARD,
+                border_radius=ft.BorderRadius.all(12),
+            )
+            total_done = sum(p.completed for p in points)
+            line = ft.Container(
+                content=ft.Column(
+                    [
+                        ft.Text("14 дней", size=12, color=MUTED),
+                        ft.Text(
+                            f"Завершено за период: {total_done}",
+                            size=16,
+                            weight=ft.FontWeight.W_600,
+                            color=TEXT,
+                        ),
+                        muted("Графики flet-charts недоступны в этой сборке"),
+                    ],
+                    spacing=6,
+                ),
+                height=200,
+                expand=True,
+                padding=12,
+                bgcolor=CARD,
+                border_radius=ft.BorderRadius.all(12),
+            )
 
         goal_rings = ft.Row(
             [

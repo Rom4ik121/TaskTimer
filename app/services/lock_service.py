@@ -115,12 +115,90 @@ def is_biometrics_enabled(session: Session) -> bool:
     return _truthy(get_meta(session, KEY_BIOMETRICS))
 
 
-def is_biometrics_available() -> bool:
-    """Desktop Flet has no Face ID / local auth; iOS would report True later."""
+_runtime_platform: str | None = None
+
+
+def set_runtime_platform(platform) -> None:
+    """Record ``page.platform`` from the UI layer (call once at startup)."""
+    global _runtime_platform
+    if platform is None:
+        _runtime_platform = None
+        return
+    try:
+        val = getattr(platform, "value", None)
+        if val:
+            _runtime_platform = str(val).strip().lower()
+            return
+    except Exception:
+        pass
+    s = str(platform).strip().lower()
+    if "." in s:
+        s = s.rsplit(".", 1)[-1]
+    _runtime_platform = s
+
+
+def _platform_is_ios_or_android() -> bool:
+    plat = (_runtime_platform or "").lower()
+    if plat in ("ios", "android", "android_tv"):
+        return True
+    import os
+
+    for key in ("FLET_PLATFORM", "SERIOUS_PYTHON_PLATFORM", "TARGET_PLATFORM"):
+        val = (os.environ.get(key) or "").strip().lower()
+        if val in ("ios", "iphoneos", "iphonesimulator", "android"):
+            return True
     return False
 
 
+def _probe_flet_local_auth() -> bool:
+    """Thin try: return True if Flet exposes a local-auth / Authentication API."""
+    try:
+        import flet as ft
+
+        for name in ("LocalAuth", "local_auth", "Authentication", "BiometricAuth"):
+            if hasattr(ft, name):
+                return True
+    except Exception:
+        pass
+    return False
+
+
+def is_biometrics_available() -> bool:
+    """Whether Face ID / biometrics can be offered in the UI.
+
+    - Desktop Flet: always False (no local_auth).
+    - iOS / Android: True so Settings and lock screen show Face ID affordance.
+      Actual unlock still goes through ``try_biometric_unlock`` — without a
+      Flet local_auth plugin that returns False and PIN stays primary.
+    """
+    if _probe_flet_local_auth():
+        return True
+    return _platform_is_ios_or_android()
+
+
+def try_biometric_unlock() -> bool:
+    """Attempt Face ID / biometrics. Returns True only on confirmed success.
+
+    Flet 0.86 has no built-in local_auth plugin wired here — always False
+    until a plugin is added. Callers must keep PIN as the primary unlock path.
+    """
+    if not is_biometrics_available():
+        return False
+    try:
+        import flet as ft
+
+        auth = getattr(ft, "LocalAuth", None) or getattr(ft, "Authentication", None)
+        if auth is None:
+            return False
+        # Future: await / call auth.authenticate(...) when API lands.
+        return False
+    except Exception:
+        return False
+
+
 def biometrics_unavailable_message() -> str:
+    if _platform_is_ios_or_android() and not _probe_flet_local_auth():
+        return "Face ID появится после плагина local_auth — используйте PIN"
     return "Face ID недоступен на этом устройстве — используйте PIN"
 
 

@@ -104,7 +104,7 @@ def build_lock_screen(page: ft.Page, *, on_unlock, on_bind_keys=None) -> ft.Cont
         on_bind_keys(feed_key)
 
     def on_face(_e=None) -> None:
-        if lock_service.is_biometrics_available():
+        if lock_service.try_biometric_unlock():
             on_unlock()
             return
         show_snack(page, lock_service.biometrics_unavailable_message(), error=True)

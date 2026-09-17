@@ -1,8 +1,18 @@
 # TaskTimer — журнал изменений
 
-Кратко по волнам **A–AR** (схема SQLite → `SCHEMA_VERSION = 13`). Wave **AR** — PIN-блокировка, splash и иконка.
+Кратко по волнам **A–AS** (схема SQLite → `SCHEMA_VERSION = 13`). Wave **AS** — готовность к `flet build ipa` / iPhone fullscreen.
 
 Исторические волны Z–AL: SCHEMA_VERSION = 11 (без бампа до AM).
+
+## AS — iOS IPA ready / iPhone layout
+
+- `pyproject.toml`: product TaskTimer, org/bundle `com.rom4ik121.tasktimer`, splash `#0F0F12`, `SQLAlchemy==2.0.36`, entry `main.py` → `app.main:main`
+- На iOS/Android: полноэкранный UI без декоративной «рамки телефона»; SafeArea; desktop-превью 390×844 сохранено
+- `assets/icon_ios.png` ≥1024×1024 (opaque charcoal); `[tool.flet.ios.info]` NSFaceIDUsageDescription (RU)
+- Face ID: preference + Info.plist; `try_biometric_unlock` (плагин later); PIN основной; desktop не врёт про Face ID
+- flet-charts: опциональный import + fallback колец/графиков при отсутствии расширения
+- Docs: `docs/IOS_BUILD.md` (RU); README секция iOS; **IPA только на macOS+Xcode**
+- FEATURE_COUNT 74; schema 13 без бампа; smoke Wave AS + dist
 
 ## AR — PIN-лок, первый запуск, иконка
 
