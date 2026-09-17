@@ -1,0 +1,5 @@
+flet>=0.86.0
+flet-charts>=0.1.0
+flet-desktop>=0.86.0
+sqlalchemy>=2.0.0
+pydantic>=2.0.0
