@@ -1,4 +1,4 @@
-# TaskTimer — матрица фич (волны A–AP)
+# TaskTimer — матрица фич (волны A–AR)
 
 Краткий one-pager возможностей. Локальное приложение (Flet + SQLite).
 
@@ -46,7 +46,10 @@
 | **AN** | Фильтр истории фокуса: чипы Все / С заметкой + текст заметки под строкой | Фокус |
 | **AO** | Аналитика: последние 5 завершённых сессий с заметкой (title + snippet) | Аналитика |
 | **AP** | Тап заметки фокуса в Аналитике → экран Фокуса (`on_open_focus`) / clipboard fallback | Аналитика, main |
+| **AQ** | Холст infinite canvas + MD vault (`data/notes`), schema 13, FEATURE 72 | Холст |
+| **AR** | PIN-лок (PBKDF2) + splash/setup/lock + `assets/icon.png`, FEATURE 73 | Лок, Настройки |
 
-**Инфра:** schema `13` (бамп AQ: `canvas_nodes`/`canvas_edges` + MD vault; AM: `time_sessions.note`), индексы SQLite, seed без double-seed, `CHANGELOG.md`, чистый dist zip, `install.ps1`, `scripts/smoke_test.py` → `SMOKE_OK` (A–AQ).
+**Инфра:** schema `13` (бамп AQ: `canvas_nodes`/`canvas_edges` + MD vault; AM: `time_sessions.note`), индексы SQLite, seed без double-seed, `CHANGELOG.md`, чистый dist zip, `install.ps1`, `scripts/smoke_test.py` → `SMOKE_OK` (A–AR).
 
 | **AQ** | Холст infinite canvas + MD vault (`data/notes`), schema 13, FEATURE 72 |
+| **AR** | PIN-лок (PBKDF2) + splash/setup/lock + `assets/icon.png`, FEATURE 73 |

@@ -10,7 +10,7 @@ from pydantic import ValidationError
 
 from app.db import SCHEMA_VERSION, get_db_path, get_session
 from app.schemas import SettingsUpdate
-from app.services import export_service, goal_service, settings_service, streak_service
+from app.services import export_service, goal_service, lock_service, settings_service, streak_service
 from app.ui.components.cards import empty_state
 from app.ui.components.dialogs import confirm_delete, show_snack
 from app.ui.screens.onboarding import clear_onboarded, show_onboarding
@@ -27,21 +27,31 @@ from app.ui.theme import (
 
 
 APP_VERSION = "1.0"
-# Numbered capabilities in README (Waves A–AQ), kept in sync with feature_matrix.
-FEATURE_COUNT = 72
+# Numbered capabilities in README (Waves A–AR), kept in sync with feature_matrix.
+FEATURE_COUNT = 73
 
 
 def _readme_path() -> Path:
     return Path(__file__).resolve().parents[3] / "README.md"
 
 
-def build_settings(page: ft.Page, *, on_back, refresh_all) -> ft.Control:
+def build_settings(
+    page: ft.Page,
+    *,
+    on_back,
+    refresh_all,
+    on_setup_pin=None,
+    on_change_pin=None,
+) -> ft.Control:
     with get_session() as session:
         s = settings_service.get_settings(session)
         undo_path = export_service.get_last_import_backup(session)
         last_exp_path, last_exp_at = export_service.get_last_export(session)
         freeze_active = streak_service.is_freeze_active(session)
         freeze_week = streak_service.iso_week_key()
+        lock_on = lock_service.is_lock_enabled(session)
+        has_pin = lock_service.has_pin(session)
+        bio_on = lock_service.is_biometrics_enabled(session)
 
     name_field = ft.TextField(
         label="Имя",
@@ -76,6 +86,16 @@ def build_settings(page: ft.Page, *, on_back, refresh_all) -> ft.Control:
     compact_sw = ft.Switch(
         label="Компактный режим",
         value=bool(getattr(s, "compact_ui", False)),
+        active_color=ORANGE,
+    )
+    lock_sw = ft.Switch(
+        label="Блокировка PIN",
+        value=bool(lock_on),
+        active_color=ORANGE,
+    )
+    bio_sw = ft.Switch(
+        label="Face ID / биометрия",
+        value=bool(bio_on),
         active_color=ORANGE,
     )
     work_field = ft.TextField(
@@ -197,6 +217,8 @@ def build_settings(page: ft.Page, *, on_back, refresh_all) -> ft.Control:
         archive_recur_sw.active_color = hx
         auto_complete_sw.active_color = hx
         compact_sw.active_color = hx
+        lock_sw.active_color = hx
+        bio_sw.active_color = hx
         name_field.focused_border_color = hx
         work_field.focused_border_color = hx
         break_field.focused_border_color = hx
@@ -296,6 +318,71 @@ def build_settings(page: ft.Page, *, on_back, refresh_all) -> ft.Control:
         ink=True,
         disabled=freeze_active,
         opacity=0.55 if freeze_active else 1.0,
+    )
+
+    def on_lock_toggle(e):
+        want = bool(e.control.value)
+        with get_session() as session:
+            if want and not lock_service.has_pin(session):
+                lock_sw.value = False
+                try:
+                    page.update()
+                except Exception:
+                    pass
+                if callable(on_setup_pin):
+                    on_setup_pin()
+                else:
+                    show_snack(page, "Сначала задайте PIN", error=True)
+                return
+            lock_service.set_lock_enabled(session, want)
+        show_snack(
+            page,
+            "Блокировка включена" if want else "Блокировка выключена",
+        )
+
+    lock_sw.on_change = on_lock_toggle
+
+    def on_bio_toggle(e):
+        want = bool(e.control.value)
+        with get_session() as session:
+            lock_service.set_biometrics_enabled(session, want)
+        if want and not lock_service.is_biometrics_available():
+            show_snack(page, lock_service.biometrics_unavailable_message())
+        else:
+            show_snack(
+                page,
+                "Face ID: предпочтение сохранено" if want else "Face ID выключен",
+            )
+
+    bio_sw.on_change = on_bio_toggle
+
+    def do_change_pin(_e=None):
+        if callable(on_change_pin):
+            on_change_pin()
+        else:
+            show_snack(page, "Смена PIN недоступна", error=True)
+
+    change_pin_btn = ft.Container(
+        content=ft.Row(
+            [
+                ft.Icon(ft.Icons.PIN_OUTLINED, color=TEXT, size=18),
+                ft.Text(
+                    "Сменить PIN",
+                    size=14,
+                    weight=ft.FontWeight.W_700,
+                    color=TEXT,
+                ),
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=8,
+        ),
+        bgcolor="#1C1C22",
+        padding=14,
+        border_radius=ft.BorderRadius.all(14),
+        border=ft.Border.all(1, BORDER),
+        on_click=do_change_pin,
+        ink=True,
+        visible=bool(has_pin),
     )
 
     def save(_):
@@ -672,7 +759,7 @@ def build_settings(page: ft.Page, *, on_back, refresh_all) -> ft.Control:
     SHORTCUT_HELP_LINES = [
         ("Ctrl+N — создать задачу (desktop / native Flet).", "item"),
         ("Ctrl+F — открыть поиск (desktop / native Flet).", "item"),
-        ("Esc — закрыть оверлей (поиск / создать / настройки / фокус / деталь / напоминания / заметка), если фокус не в TextField.", "item"),
+        ("Esc — закрыть оверлей (поиск / создать / настройки / фокус / деталь / напоминания / заметка), если фокус не в TextField. Esc не снимает блокировку PIN.", "item"),
         ("1 / 2 / 3 / 4 — вкладки Дом / Задачи / Холст / Статы (на главном экране, не в TextField).", "item"),
         ("Пробел — открыть Фокус-таймер (на главном экране, не в TextField).", "item"),
         ("На web Ctrl+N / Ctrl+F часто перехватывает браузер (новое окно / поиск по странице) — сочетание может не дойти до приложения.", "muted"),
@@ -817,6 +904,36 @@ def build_settings(page: ft.Page, *, on_back, refresh_all) -> ft.Control:
                             muted("Акцент применяется сразу — перезапуск не нужен."),
                         ],
                         spacing=14,
+                    ),
+                    padding=16,
+                    **card_style(),
+                ),
+                ft.Container(
+                    content=ft.Column(
+                        [
+                            ft.Text(
+                                "Защита",
+                                size=15,
+                                weight=ft.FontWeight.W_700,
+                                color=TEXT,
+                            ),
+                            muted(
+                                "PIN хранится только как солёный хеш (PBKDF2-HMAC-SHA256). "
+                                "После 5 неверных попыток — пауза 30 с."
+                            ),
+                            lock_sw,
+                            muted(
+                                "На следующем запуске потребуется PIN, если блокировка включена."
+                            ),
+                            change_pin_btn,
+                            bio_sw,
+                            muted(
+                                lock_service.biometrics_unavailable_message()
+                                if not lock_service.is_biometrics_available()
+                                else "Face ID разблокирует приложение на этом устройстве."
+                            ),
+                        ],
+                        spacing=10,
                     ),
                     padding=16,
                     **card_style(),
@@ -1106,7 +1223,7 @@ def build_settings(page: ft.Page, *, on_back, refresh_all) -> ft.Control:
                                 color=TEXT,
                             ),
                             muted(
-                                f"{FEATURE_COUNT} фичи · волны A–AQ · "
+                                f"{FEATURE_COUNT} фичи · волны A–AR · "
                                 f"схема SQLite {SCHEMA_VERSION}"
                             ),
                             muted(
