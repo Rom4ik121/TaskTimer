@@ -1,0 +1,62 @@
+[project]
+name = "tasktimer"
+version = "1.0.0"
+description = "TaskTimer — премиальный тёмный таск-менеджер (Flet + SQLite)"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    # Pin SQLAlchemy to a version with iOS wheels on the Flet mobile feed.
+    # Newer releases may lack iphoneos/iphonesimulator wheels and break `flet build ipa`.
+    "SQLAlchemy==2.0.36",
+    "flet>=0.86",
+    "pydantic>=2",
+    # flet-charts is a Flet Flutter extension (Python side is py3-none-any).
+    # Charts UI falls back if the extension is missing at runtime on a build.
+    "flet-charts>=0.86",
+]
+
+[tool.flet]
+product = "TaskTimer"
+org = "com.rom4ik121"
+bundle_id = "com.rom4ik121.tasktimer"
+company = "Rom4ik121"
+# Opaque charcoal behind generated icons (iOS strips alpha from sources).
+icon_background = "#0F0F12"
+
+[tool.flet.app]
+# Project root: entry is ./main.py which delegates to app.main:main.
+# Keeps the existing `app/` package; assets/ stay at repo root.
+path = "."
+module = "main"
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "data",
+    "docs",
+    "scripts",
+    "__pycache__",
+    ".flet",
+    "app/.flet",
+]
+
+[tool.flet.splash]
+color = "#0F0F12"
+dark_color = "#0F0F12"
+
+[tool.flet.ios]
+# Placeholder for local device builds. Override on the Mac:
+#   flet build ipa --ios-team-id YOUR_TEAM --ios-export-method debugging
+# Also set provisioning_profile / signing_certificate when ready.
+export_method = "debugging"
+# team_id = "YOUR_10_CHAR_TEAM_ID"
+# provisioning_profile = "debugging com.rom4ik121.tasktimer"
+# signing_certificate = "Apple Development"
+
+[tool.flet.ios.info]
+NSFaceIDUsageDescription = "TaskTimer использует Face ID для быстрой разблокировки приложения."
+
+[tool.flet.ios.splash]
+color = "#0F0F12"
+dark_color = "#0F0F12"

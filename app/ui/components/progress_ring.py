@@ -2,9 +2,16 @@
 from __future__ import annotations
 
 import flet as ft
-import flet_charts as fc
 
 from app.ui.theme import BG, CARD, GREEN, MUTED, ORANGE, TEXT
+
+try:
+    import flet_charts as fc
+
+    _HAS_CHARTS = True
+except Exception:  # noqa: BLE001 — missing iOS wheel / extension
+    fc = None  # type: ignore[assignment]
+    _HAS_CHARTS = False
 
 
 def donut_progress(
@@ -18,6 +25,42 @@ def donut_progress(
 ) -> ft.Control:
     pct = max(0.0, min(100.0, percent))
     remain = max(0.001, 100.0 - pct)
+    label = center_label if center_label is not None else f"{pct:.0f}%"
+    center = ft.Column(
+        [
+            ft.Text(label, size=18, weight=ft.FontWeight.W_700, color=TEXT),
+            *([ft.Text(subtitle, size=10, color=MUTED)] if subtitle else []),
+        ],
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        spacing=2,
+        tight=True,
+    )
+    if not _HAS_CHARTS:
+        # Fallback without flet-charts (e.g. iOS build missing extension wheel).
+        return ft.Container(
+            content=ft.Stack(
+                [
+                    ft.ProgressRing(
+                        value=pct / 100.0,
+                        width=size,
+                        height=size,
+                        stroke_width=thickness,
+                        color=color,
+                        bgcolor="#2A2A32",
+                    ),
+                    ft.Container(
+                        content=center,
+                        alignment=ft.Alignment.CENTER,
+                        width=size,
+                        height=size,
+                    ),
+                ],
+                width=size,
+                height=size,
+            ),
+            width=size,
+            height=size,
+        )
     center_r = (size / 2) - thickness - 2
     chart = fc.PieChart(
         sections=[
@@ -30,19 +73,10 @@ def donut_progress(
         width=size,
         height=size,
     )
-    label = center_label if center_label is not None else f"{pct:.0f}%"
     stack_controls: list[ft.Control] = [
         chart,
         ft.Container(
-            content=ft.Column(
-                [
-                    ft.Text(label, size=18, weight=ft.FontWeight.W_700, color=TEXT),
-                    *([ft.Text(subtitle, size=10, color=MUTED)] if subtitle else []),
-                ],
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                spacing=2,
-                tight=True,
-            ),
+            content=center,
             alignment=ft.Alignment.CENTER,
             width=size,
             height=size,

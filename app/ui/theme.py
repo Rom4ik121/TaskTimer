@@ -46,6 +46,50 @@ PHONE_W = 390
 PHONE_H = 844
 RADIUS = 14
 
+
+def platform_name(page: ft.Page | None = None) -> str:
+    """Normalized platform string: ios / android / windows / linux / macos / ""."""
+    if page is None:
+        return ""
+    try:
+        plat = getattr(page, "platform", None)
+    except Exception:
+        return ""
+    if plat is None:
+        return ""
+    try:
+        val = getattr(plat, "value", None)
+        if val:
+            return str(val).strip().lower()
+    except Exception:
+        pass
+    s = str(plat).strip().lower()
+    if "." in s:
+        s = s.rsplit(".", 1)[-1]
+    return s
+
+
+def is_mobile_layout(page: ft.Page | None = None) -> bool:
+    """True on iOS/Android (real device / simulator) or narrow non-desktop web.
+
+    Desktop (Windows / Linux / macOS) keeps the decorative 390×844 phone frame.
+    """
+    name = platform_name(page)
+    if name in ("ios", "android", "android_tv"):
+        return True
+    if name in ("windows", "linux", "macos"):
+        return False
+    # Web / unknown: treat narrow viewport as mobile fullscreen.
+    if page is None:
+        return False
+    try:
+        w = float(getattr(page, "width", None) or 0)
+    except (TypeError, ValueError):
+        w = 0.0
+    return 0 < w <= 500
+
+
+
 # Named accent presets for Settings chips (label, hex)
 ACCENT_PRESETS: list[tuple[str, str]] = [
     ("orange", "#FF8A00"),
@@ -187,19 +231,21 @@ def apply_theme(page: ft.Page, *, accent: str | None = None) -> None:
     page.padding = 0
     page.spacing = 0
     page.title = "TaskTimer"
-    try:
-        page.window.width = PHONE_W + 24
-        page.window.height = PHONE_H + 48
-        page.window.min_width = 360
-        page.window.min_height = 700
-    except Exception:
-        pass
-    try:
-        ic = window_icon_path()
-        if ic:
-            page.window.icon = ic
-    except Exception:
-        pass
+    mobile = is_mobile_layout(page)
+    if not mobile:
+        try:
+            page.window.width = PHONE_W + 24
+            page.window.height = PHONE_H + 48
+            page.window.min_width = 360
+            page.window.min_height = 700
+        except Exception:
+            pass
+        try:
+            ic = window_icon_path()
+            if ic:
+                page.window.icon = ic
+        except Exception:
+            pass
     _set_page_theme(page)
 
 

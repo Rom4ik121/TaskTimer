@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Derive icon-192.png and icon.ico from the official assets/icon.png.
+"""Derive icon-192.png, icon.ico, and icon_ios.png from assets/icon.png.
 
 Does not invent a mark. The brand PNG must already exist.
 """
@@ -15,6 +15,8 @@ ASSETS = ROOT / "assets"
 ICON = ASSETS / "icon.png"
 ICON_192 = ASSETS / "icon-192.png"
 ICON_ICO = ASSETS / "icon.ico"
+ICON_IOS = ASSETS / "icon_ios.png"
+IOS_BG = "0x0F0F12@1"
 
 
 def _png_size(path: Path) -> tuple[int, int]:
@@ -63,8 +65,27 @@ def main() -> int:
     _ffmpeg_scale(ICON, tmp, 256)
     write_ico(ICON_ICO, tmp.read_bytes(), 256)
     tmp.unlink(missing_ok=True)
+    # iOS launcher source ≥1024 with opaque charcoal (Flet strips alpha on iOS).
+    subprocess.check_call(
+        [
+            "ffmpeg",
+            "-y",
+            "-v",
+            "error",
+            "-i",
+            str(ICON),
+            "-vf",
+            f"scale=1024:1024:flags=lanczos,format=rgba,pad=1024:1024:(ow-iw)/2:(oh-ih)/2:color={IOS_BG},format=rgb24",
+            "-frames:v",
+            "1",
+            "-update",
+            "1",
+            str(ICON_IOS),
+        ]
+    )
     print(f"wrote {ICON_192} ({ICON_192.stat().st_size} bytes)")
     print(f"wrote {ICON_ICO} ({ICON_ICO.stat().st_size} bytes)")
+    print(f"wrote {ICON_IOS} ({ICON_IOS.stat().st_size} bytes)")
     return 0
 
 
