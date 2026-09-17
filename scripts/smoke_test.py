@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import struct
 import sys
 import tempfile
 from datetime import date, datetime, timedelta
@@ -3726,6 +3727,12 @@ def main() -> int:
     raw = icon.read_bytes()
     assert raw[:8] == b"\x89PNG\r\n\x1a\n"
     assert len(raw) > 200
+    icon192 = ROOT / "assets" / "icon-192.png"
+    assert icon192.is_file(), "assets/icon-192.png required"
+    raw192 = icon192.read_bytes()
+    assert raw192[:8] == b"\x89PNG\r\n\x1a\n"
+    w192, h192 = struct.unpack(">II", raw192[16:24])
+    assert (w192, h192) == (192, 192)
 
     for need in (
         "app.services.lock_service",

@@ -6,7 +6,7 @@
 
 ## AR — PIN-лок, первый запуск, иконка
 
-- Иконка `assets/icon.png` (charcoal `#0F0F12` + оранжевое кольцо-таймер `#FF8A00`); `page.window.icon` + `ft.run(..., assets_dir=assets)`
+- Иконка `assets/icon.png` + `assets/icon-192.png` — официальный бренд (оранжевое кольцо-таймер с галочкой на charcoal squircle); `page.window.icon` + `ft.run(..., assets_dir=assets)`
 - PIN из 4 цифр, только **солёный хеш** PBKDF2-HMAC-SHA256 в `app_meta` (`pin_salt` / `pin_hash`)
 - Первый запуск: splash (~0.8 с, можно пропустить) → онбординг → «Защитите приложение» (PIN → повтор → Face ID) или «Настроить позже»
 - Повторный запуск при включённой блокировке: полный экран «Введите PIN», iOS-клавиатура, Face ID (на desktop — «Face ID недоступен на этом устройстве — используйте PIN»)

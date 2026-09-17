@@ -110,11 +110,10 @@ def build_lock_screen(page: ft.Page, *, on_unlock, on_bind_keys=None) -> ft.Cont
         show_snack(page, lock_service.biometrics_unavailable_message(), error=True)
 
     icon = ft.Image(
-        src=icon_src(),
+        src=icon_src(small=True),
         width=88,
         height=88,
         fit=ft.BoxFit.CONTAIN,
-        border_radius=ft.BorderRadius.all(20),
     )
     face_btn = ft.Container(
         content=ft.Column(

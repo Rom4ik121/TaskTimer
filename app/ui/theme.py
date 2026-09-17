@@ -7,11 +7,14 @@ import flet as ft
 
 ASSETS_DIR = Path(__file__).resolve().parents[2] / "assets"
 ICON_PNG = ASSETS_DIR / "icon.png"
+ICON_PNG_192 = ASSETS_DIR / "icon-192.png"
 ICON_ICO = ASSETS_DIR / "icon.ico"
 
 
-def icon_src() -> str:
+def icon_src(*, small: bool = False) -> str:
     """Asset-relative name for ``ft.Image`` when ``ft.run(..., assets_dir=assets)``."""
+    if small and ICON_PNG_192.is_file():
+        return "icon-192.png"
     return "icon.png"
 
 

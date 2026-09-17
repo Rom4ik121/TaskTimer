@@ -40,11 +40,10 @@ def build_splash(
             pass
 
     icon = ft.Image(
-        src=icon_src(),
+        src=icon_src(small=True),
         width=96,
         height=96,
         fit=ft.BoxFit.CONTAIN,
-        border_radius=ft.BorderRadius.all(22),
     )
     return ft.Container(
         content=ft.Column(

@@ -126,7 +126,7 @@ python -m flet run app/main.py
 python app/main.py
 ```
 
-Иконка приложения: `assets/icon.png` (окно — `page.window.icon`, Flet `assets_dir`). PIN хранится только как солёный хеш; блокировку можно включить в Настройках.
+Иконка приложения: официальный бренд `assets/icon.png` (и `assets/icon-192.png`; окно — `page.window.icon`, Flet `assets_dir`). PIN хранится только как солёный хеш; блокировку можно включить в Настройках.
 
 Web (если доступен Flet web):
 
