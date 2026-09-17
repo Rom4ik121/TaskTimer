@@ -47,19 +47,23 @@ def clear_onboarded() -> None:
         settings_service.clear_onboarded(session)
 
 
-def maybe_show_onboarding(page: ft.Page) -> None:
+def maybe_show_onboarding(page: ft.Page, on_done=None) -> None:
     """Show BottomSheet once if app_meta.onboarded is not set."""
     if is_onboarded():
+        if callable(on_done):
+            on_done()
         return
-    show_onboarding(page)
+    show_onboarding(page, on_done=on_done)
 
 
-def show_onboarding(page: ft.Page, *, force: bool = False) -> None:
+def show_onboarding(page: ft.Page, *, force: bool = False, on_done=None) -> None:
     """Present 3-card onboarding sheet. Skip / last Далее → mark onboarded.
 
     Uses the live accent (theme.ORANGE) so Settings presets apply immediately.
     """
     if not force and is_onboarded():
+        if callable(on_done):
+            on_done()
         return
 
     accent = theme_mod.ORANGE
@@ -114,12 +118,19 @@ def show_onboarding(page: ft.Page, *, force: bool = False) -> None:
         _paint_dots()
         page.update()
 
+    finished = {"done": False}
+
     def _finish() -> None:
+        if finished["done"]:
+            return
+        finished["done"] = True
         mark_onboarded()
         try:
             page.pop_dialog()
         except Exception:
             pass
+        if callable(on_done):
+            on_done()
 
     def on_skip(_=None) -> None:
         _finish()
@@ -190,6 +201,6 @@ def show_onboarding(page: ft.Page, *, force: bool = False) -> None:
         dismissible=False,
         draggable=False,
         show_drag_handle=True,
-        on_dismiss=lambda e: mark_onboarded(),
+        on_dismiss=lambda e: _finish(),
     )
     page.show_dialog(sheet)

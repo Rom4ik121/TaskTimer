@@ -11,7 +11,7 @@ if str(ROOT) not in sys.path:
 import flet as ft
 
 from app.db import get_session, init_db
-from app.services import settings_service, task_service
+from app.services import lock_service, settings_service, task_service
 from app.services.seed import seed_if_empty
 from app.ui.components.nav import build_nav
 from app.ui.screens.analytics import build_analytics
@@ -19,15 +19,18 @@ from app.ui.screens.create_task import build_create_task
 from app.ui.screens.focus import build_focus
 from app.ui.screens.goal_detail import build_goal_detail
 from app.ui.screens.home import build_home
+from app.ui.screens.lock_screen import build_lock_screen
+from app.ui.screens.pin_setup import build_pin_setup
 from app.ui.screens.reminders import build_reminders
 from app.ui.screens.canvas_board import build_canvas_board
 from app.ui.screens.note_editor import build_note_editor
 from app.ui.screens.search import build_search
 from app.ui.screens.settings import build_settings
+from app.ui.screens.splash import build_splash
 from app.ui.screens.task_detail import build_task_detail
 from app.ui.screens.onboarding import maybe_show_onboarding
 from app.ui.screens.tasks import build_tasks
-from app.ui.theme import BG, BG_ELEVATED, BORDER, PHONE_H, PHONE_W, apply_accent, apply_theme
+from app.ui.theme import ASSETS_DIR, BG, BG_ELEVATED, BORDER, PHONE_H, PHONE_W, apply_accent, apply_theme
 
 
 _INPUT_TYPE_NAMES = frozenset(
@@ -132,10 +135,11 @@ def keyboard_from_text_input(e) -> bool:
 
 
 
-# Overlay screens closed by Esc (not main tabs).
+# Overlay screens closed by Esc (not main tabs). Lock / PIN / splash never bypass.
 _OVERLAY_SCREENS = frozenset(
     {"search", "create", "settings", "focus", "task", "goal", "note", "reminders"}
 )
+_GATE_SCREENS = frozenset({"lock", "pin_setup", "splash", "onboarding"})
 
 
 
@@ -186,16 +190,27 @@ def main(page: ft.Page) -> None:
         accent = settings_service.get_settings(session).accent_hex
     apply_accent(accent)
     apply_theme(page, accent=accent)
+    try:
+        page.window.icon = str(ASSETS_DIR / "icon.ico" if (ASSETS_DIR / "icon.ico").is_file() else ASSETS_DIR / "icon.png")
+    except Exception:
+        pass
 
     state = {
         "tab": 0,
-        "screen": "main",  # main | create | task | goal | focus | settings | reminders | search | note
+        "screen": "splash",  # splash | onboarding | pin_setup | lock | main | overlays
         "task_id": None,
         "goal_id": None,
         "note_filename": None,
         "note_title": None,
         "tasks_filter": None,
+        "pin_setup_mode": "setup",
+        "pin_setup_from": "launch",
+        "pin_key_handler": None,
+        "unlocked": False,
     }
+    with get_session() as session:
+        if lock_service.should_gate_main(session):
+            state["screen"] = "lock"
     content = ft.Container(expand=True)
     nav_host = ft.Container()
 
@@ -259,6 +274,77 @@ def main(page: ft.Page) -> None:
         state["note_title"] = None
         render()
 
+    def bind_pin_keys(fn) -> None:
+        state["pin_key_handler"] = fn
+
+    def enter_app() -> None:
+        state["unlocked"] = True
+        state["pin_key_handler"] = None
+        state["screen"] = "main"
+        render()
+
+    def go_lock() -> None:
+        state["screen"] = "lock"
+        state["unlocked"] = False
+        render()
+
+    def go_pin_setup(*, mode: str = "setup", from_settings: bool = False) -> None:
+        state["pin_setup_mode"] = mode
+        state["pin_setup_from"] = "settings" if from_settings else "launch"
+        state["screen"] = "pin_setup"
+        render()
+
+    def after_pin_setup() -> None:
+        if state.get("pin_setup_from") == "settings":
+            state["pin_key_handler"] = None
+            state["screen"] = "settings"
+            render()
+            return
+        enter_app()
+
+    def cancel_pin_setup() -> None:
+        if state.get("pin_setup_from") == "settings":
+            state["pin_key_handler"] = None
+            state["screen"] = "settings"
+            render()
+            return
+        skip_pin_setup()
+
+    def skip_pin_setup() -> None:
+        with get_session() as session:
+            lock_service.skip_lock_setup(session)
+        after_pin_setup()
+
+    def continue_after_onboarding() -> None:
+        with get_session() as session:
+            needs_setup = lock_service.needs_pin_setup(session)
+            gate = lock_service.should_gate_main(session)
+        if needs_setup:
+            go_pin_setup(mode="setup", from_settings=False)
+            return
+        if gate:
+            go_lock()
+            return
+        enter_app()
+
+    def after_splash() -> None:
+        with get_session() as session:
+            gate = lock_service.should_gate_main(session)
+            needs_setup = lock_service.needs_pin_setup(session)
+            onboarded = settings_service.is_onboarded(session)
+        if gate:
+            go_lock()
+            return
+        if not onboarded:
+            state["screen"] = "onboarding"
+            render()
+            maybe_show_onboarding(page, on_done=continue_after_onboarding)
+            return
+        if needs_setup:
+            go_pin_setup(mode="setup", from_settings=False)
+            return
+        enter_app()
+
     def refresh_all():
         render()
 
@@ -274,7 +360,32 @@ def main(page: ft.Page) -> None:
 
     def render():
         screen = state["screen"]
-        if screen == "create":
+        if screen == "splash":
+            content.content = build_splash(page, on_done=after_splash)
+            nav_host.visible = False
+        elif screen == "onboarding":
+            content.content = build_splash(
+                page, on_done=lambda: None, auto_ms=0, skippable=False
+            )
+            nav_host.visible = False
+        elif screen == "lock":
+            content.content = build_lock_screen(
+                page, on_unlock=enter_app, on_bind_keys=bind_pin_keys
+            )
+            nav_host.visible = False
+        elif screen == "pin_setup":
+            from_settings = state.get("pin_setup_from") == "settings"
+            mode = state.get("pin_setup_mode") or "setup"
+            content.content = build_pin_setup(
+                page,
+                on_done=after_pin_setup,
+                on_skip=cancel_pin_setup,
+                allow_skip=not from_settings,
+                mode=mode,
+                on_bind_keys=bind_pin_keys,
+            )
+            nav_host.visible = False
+        elif screen == "create":
             content.content = build_create_task(
                 page, on_done=leave_overlay, refresh_all=refresh_all
             )
@@ -306,7 +417,11 @@ def main(page: ft.Page) -> None:
             nav_host.visible = False
         elif screen == "settings":
             content.content = build_settings(
-                page, on_back=leave_overlay, refresh_all=refresh_all
+                page,
+                on_back=leave_overlay,
+                refresh_all=refresh_all,
+                on_setup_pin=lambda: go_pin_setup(mode="setup", from_settings=True),
+                on_change_pin=lambda: go_pin_setup(mode="change", from_settings=True),
             )
             nav_host.visible = False
         elif screen == "reminders":
@@ -428,6 +543,18 @@ def main(page: ft.Page) -> None:
             key = raw_key.strip().lower()
         ctrl = bool(getattr(e, "ctrl", False))
         alt = bool(getattr(e, "alt", False))
+        screen_now = state.get("screen") or "main"
+        # Esc / shortcuts never bypass lock, PIN setup, or splash.
+        if screen_now in _GATE_SCREENS:
+            handler = state.get("pin_key_handler")
+            if key in ("escape", "esc"):
+                return
+            if callable(handler) and not ctrl and not alt:
+                if key in "0123456789" or key.isdigit():
+                    handler(key[-1] if key else key)
+                elif key in ("backspace", "delete", "back"):
+                    handler("back")
+            return
         # Esc closes search/create/settings/focus/detail when not in a TextField.
         if key in ("escape", "esc") and not alt:
             escape_closes_overlay(state.get("screen") or "main", leave_overlay)
@@ -471,8 +598,8 @@ def main(page: ft.Page) -> None:
         )
     )
     render()
-    maybe_show_onboarding(page)
+    # Launch flow starts on splash; onboarding / PIN / lock follow from after_splash.
 
 
 if __name__ == "__main__":
-    ft.run(main)
+    ft.run(main, assets_dir=str(ASSETS_DIR))

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import struct
 import sys
 import tempfile
 from datetime import date, datetime, timedelta
@@ -2518,7 +2519,7 @@ def main() -> int:
 
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
     assert "Esc — закрыть оверлей" in src_set or "Esc" in src_set
-    assert "A–AD" in src_set or "A-AD" in src_set or "A–AE" in src_set or "A-AE" in src_set or "A–AF" in src_set or "A-AF" in src_set or "A–AG" in src_set or "A-AG" in src_set or "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set
+    assert "A–AD" in src_set or "A-AD" in src_set or "A–AE" in src_set or "A-AE" in src_set or "A–AF" in src_set or "A-AF" in src_set or "A–AG" in src_set or "A-AG" in src_set or "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set
 
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AD" in rd
@@ -2565,7 +2566,7 @@ def main() -> int:
 
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
     assert "1 / 2 / 3 / 4" in src_set
-    assert "A–AE" in src_set or "A-AE" in src_set or "A–AF" in src_set or "A-AF" in src_set or "A–AG" in src_set or "A-AG" in src_set or "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set
+    assert "A–AE" in src_set or "A-AE" in src_set or "A–AF" in src_set or "A-AF" in src_set or "A–AG" in src_set or "A-AG" in src_set or "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set
 
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AE" in rd
@@ -2610,7 +2611,7 @@ def main() -> int:
 
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
     assert "Пробел" in src_set and "Фокус" in src_set
-    assert "A–AF" in src_set or "A-AF" in src_set or "A–AG" in src_set or "A-AG" in src_set or "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set
+    assert "A–AF" in src_set or "A-AF" in src_set or "A–AG" in src_set or "A-AG" in src_set or "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set
 
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AF" in rd
@@ -2706,7 +2707,7 @@ def main() -> int:
     assert "class MorningBriefing" in src_sch
     assert "class IncompleteQuota" in src_sch
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
-    assert "A–AG" in src_set or "A-AG" in src_set or "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set
+    assert "A–AG" in src_set or "A-AG" in src_set or "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AG" in rd
     cl = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
@@ -2773,7 +2774,7 @@ def main() -> int:
     assert "wind_down_hour" in src_ss
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
     assert "wind_down" in src_set or "Вечерний режим" in src_set
-    assert "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set
+    assert "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set
     assert "Вечерний режим" in src_set
     src_sch = (ROOT / "app/schemas.py").read_text(encoding="utf-8")
     assert "wind_down_hour" in src_sch
@@ -2803,7 +2804,7 @@ def main() -> int:
         or "A-AJ" in src_set_ai
         or "A–AK" in src_set_ai
         or "A-AK" in src_set_ai
-        or "A–AM" in src_set_ai or "A-AM" in src_set_ai or "A–AN" in src_set_ai or "A-AN" in src_set_ai or "A–AO" in src_set_ai or "A-AO" in src_set_ai or "A–AP" in src_set_ai or "A-AP" in src_set_ai or "A–AQ" in src_set_ai or "A-AQ" in src_set_ai
+        or "A–AM" in src_set_ai or "A-AM" in src_set_ai or "A–AN" in src_set_ai or "A-AN" in src_set_ai or "A–AO" in src_set_ai or "A-AO" in src_set_ai or "A–AP" in src_set_ai or "A-AP" in src_set_ai or "A–AQ" in src_set_ai or "A-AQ" in src_set_ai or "A–AR" in src_set_ai or "A-AR" in src_set_ai
     )
     with get_session() as s:
         # clean slate tasks for isolation
@@ -2944,7 +2945,7 @@ def main() -> int:
         "A–AJ" in src_set or "A-AJ" in src_set
         or "A–AK" in src_set or "A-AK" in src_set
         or "A–AL" in src_set or "A-AL" in src_set
-        or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set
+        or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set
     )
     src_sch = (ROOT / "app/schemas.py").read_text(encoding="utf-8")
     assert "weekly_task_target" in src_sch
@@ -3012,7 +3013,7 @@ def main() -> int:
     assert (
         "A–AK" in src_set or "A-AK" in src_set
         or "A–AL" in src_set or "A-AL" in src_set
-        or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set
+        or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set
     )
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AK" in rd
@@ -3117,6 +3118,8 @@ def main() -> int:
         or "A-AP" in src_set
         or "A–AQ" in src_set
         or "A-AQ" in src_set
+        or "A–AR" in src_set
+        or "A-AR" in src_set
     )
     assert "do_streak_freeze" in src_set
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -3204,7 +3207,7 @@ def main() -> int:
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
     assert (
         "A–AM" in src_set or "A-AM" in src_set
-        or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set
+        or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set
     )
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AM" in rd
@@ -3264,7 +3267,7 @@ def main() -> int:
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
     assert (
         "A–AN" in src_set or "A-AN" in src_set
-        or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set
+        or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set
     )
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AN" in rd
@@ -3344,8 +3347,13 @@ def main() -> int:
     assert "recent_focus_notes" in src_ui
     assert "focus_notes_section" in src_ui
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
-    assert "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set
-    assert "FEATURE_COUNT = 70" in src_set or "FEATURE_COUNT = 71" in src_set or "FEATURE_COUNT = 72" in src_set
+    assert "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set
+    assert (
+        "FEATURE_COUNT = 70" in src_set
+        or "FEATURE_COUNT = 71" in src_set
+        or "FEATURE_COUNT = 72" in src_set
+        or "FEATURE_COUNT = 73" in src_set
+    )
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AO" in rd
     cl = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
@@ -3364,7 +3372,7 @@ def main() -> int:
     from inspect import signature
     from app.ui.screens.analytics import build_analytics
 
-    assert settings_ui_ap.FEATURE_COUNT == 72
+    assert settings_ui_ap.FEATURE_COUNT >= 72
     assert SCHEMA_VERSION == "13"
     with get_session() as s:
         assert get_meta(s, "schema_version") == "13"
@@ -3380,8 +3388,12 @@ def main() -> int:
     src_main = (ROOT / "app/main.py").read_text(encoding="utf-8")
     assert "on_open_focus=go_focus" in src_main and "build_analytics" in src_main
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
-    assert "FEATURE_COUNT = 72" in src_set or "FEATURE_COUNT = 71" in src_set
-    assert "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set
+    assert (
+        "FEATURE_COUNT = 72" in src_set
+        or "FEATURE_COUNT = 71" in src_set
+        or "FEATURE_COUNT = 73" in src_set
+    )
+    assert "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AP" in rd
     cl = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
@@ -3404,7 +3416,7 @@ def main() -> int:
     from app.ui.screens.note_editor import build_note_editor
 
     assert SCHEMA_VERSION == "13"
-    assert settings_ui_aq.FEATURE_COUNT == 72
+    assert settings_ui_aq.FEATURE_COUNT >= 72
 
     # Point notes vault at temp data dir (next to smoke DB)
     import app.db as dbmod
@@ -3480,8 +3492,13 @@ def main() -> int:
     src_home = (ROOT / "app/ui/screens/home.py").read_text(encoding="utf-8")
     assert "home.md" in src_home
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
-    assert "FEATURE_COUNT = 72" in src_set
-    assert "A–AQ" in src_set or "A-AQ" in src_set
+    assert "FEATURE_COUNT = 72" in src_set or "FEATURE_COUNT = 73" in src_set
+    assert (
+        "A–AQ" in src_set
+        or "A-AQ" in src_set
+        or "A–AR" in src_set
+        or "A-AR" in src_set
+    )
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AQ" in rd or "Холст" in rd
     cl = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
@@ -3565,6 +3582,173 @@ def main() -> int:
     assert "InteractiveViewer" in src_cb and "alignment" in src_cb
 
     print("Wave AQ OK")
+
+
+    print("== Wave AR: PIN lock / hash / setup / skip / gate / icon ==")
+    from app.db import get_meta, get_session, set_meta
+    from app.main import escape_closes_overlay
+    from app.services import lock_service
+    from app.ui.screens import settings as settings_ui_ar
+    from scripts.lint_imports import MODULES as LINT_MODULES
+
+    assert settings_ui_ar.FEATURE_COUNT == 73
+    assert lock_service.PIN_LENGTH == 4
+    assert lock_service.MAX_ATTEMPTS == 5
+    assert lock_service.LOCKOUT_SECONDS == 30
+
+    # --- hash verify: salted PBKDF2, never plaintext ---
+    salt_a, hash_a = lock_service.hash_pin("1234")
+    salt_b, hash_b = lock_service.hash_pin("1234")
+    assert salt_a != salt_b, "salt must be unique per hash"
+    assert lock_service.verify_pin("1234", salt_a, hash_a)
+    assert lock_service.verify_pin("1234", salt_b, hash_b)
+    assert not lock_service.verify_pin("0000", salt_a, hash_a)
+    assert not lock_service.verify_pin("123", salt_a, hash_a)
+    assert not lock_service.verify_pin("12345", salt_a, hash_a)
+    assert not lock_service.verify_pin("", salt_a, hash_a)
+    assert "1234" not in hash_a and "1234" not in salt_a
+    assert len(bytes.fromhex(salt_a)) >= 16
+    assert len(bytes.fromhex(hash_a)) == 32
+
+    with get_session() as s:
+        assert lock_service.has_pin(s) is False
+        assert lock_service.is_lock_enabled(s) is False
+        assert lock_service.should_gate_main(s) is False
+        assert lock_service.needs_pin_setup(s) is True
+
+        # skip once → lock stays off
+        lock_service.skip_lock_setup(s)
+        assert lock_service.needs_pin_setup(s) is False
+        assert lock_service.is_lock_enabled(s) is False
+        assert lock_service.should_gate_main(s) is False
+        assert get_meta(s, "lock_setup_done") == "1"
+        for key in ("pin_salt", "pin_hash", "lock_enabled", "pin_fail_count"):
+            val = get_meta(s, key)
+            assert val in (None, "", "0")
+            if val:
+                assert "1234" not in str(val)
+
+        # reset setup flag to simulate first PIN setup
+        set_meta(s, "lock_setup_done", "0")
+        s.commit()
+        assert lock_service.needs_pin_setup(s) is True
+
+        lock_service.setup_pin(s, "2468", biometrics=True)
+        assert lock_service.has_pin(s) is True
+        assert lock_service.is_lock_enabled(s) is True
+        assert lock_service.should_gate_main(s) is True
+        assert lock_service.needs_pin_setup(s) is False
+        assert lock_service.is_biometrics_enabled(s) is True
+        salt = get_meta(s, "pin_salt")
+        digest = get_meta(s, "pin_hash")
+        assert salt and digest
+        assert "2468" not in salt and "2468" not in digest
+        assert get_meta(s, "lock_enabled") == "1"
+        # no plaintext PIN anywhere in meta
+        from app.models import AppMeta
+
+        for row in s.query(AppMeta).all() if hasattr(s, "query") else []:
+            assert "2468" not in (row.value or "")
+        for row in s.scalars(__import__("sqlalchemy").select(AppMeta)).all():
+            assert "2468" not in (row.value or "")
+            assert (row.value or "") != "2468"
+
+        ok = lock_service.unlock(s, "2468")
+        assert ok.ok is True
+        assert ok.reason == "ok"
+        assert ok.shake is False
+
+        wrong = lock_service.unlock(s, "0000")
+        assert wrong.ok is False
+        assert wrong.reason == "wrong"
+        assert wrong.shake is True
+        assert wrong.remaining_attempts == 4
+
+        # correct PIN resets the fail counter before the lockout sequence
+        assert lock_service.unlock(s, "2468").ok is True
+        now = 2_000_000.0
+        for i in range(5):
+            r = lock_service.unlock(s, "1111", now=now)
+            assert r.ok is False
+        assert r.reason == "lockout"
+        assert r.lockout_remaining_sec == 30
+        still = lock_service.unlock(s, "2468", now=now + 10)
+        assert still.ok is False
+        assert still.reason == "lockout"
+        recovered = lock_service.unlock(s, "2468", now=now + 31)
+        assert recovered.ok is True
+
+        lock_service.set_lock_enabled(s, False)
+        assert lock_service.should_gate_main(s) is False
+        assert lock_service.has_pin(s) is True
+        lock_service.set_lock_enabled(s, True)
+        assert lock_service.should_gate_main(s) is True
+
+        lock_service.change_pin(s, "9999")
+        assert lock_service.unlock(s, "2468").ok is False
+        assert lock_service.unlock(s, "9999").ok is True
+        assert "9999" not in (get_meta(s, "pin_hash") or "")
+
+    # Face ID fallback copy (desktop Flet has no local auth)
+    assert lock_service.is_biometrics_available() is False
+    msg = lock_service.biometrics_unavailable_message()
+    assert "Face ID недоступен на этом устройстве" in msg
+    assert "PIN" in msg
+
+    # Esc must not bypass lock / setup / splash
+    calls = []
+    assert escape_closes_overlay("lock", lambda: calls.append("lock")) is False
+    assert escape_closes_overlay("pin_setup", lambda: calls.append("pin")) is False
+    assert escape_closes_overlay("splash", lambda: calls.append("splash")) is False
+    assert calls == []
+
+    src_main = (ROOT / "app/main.py").read_text(encoding="utf-8")
+    assert "build_lock_screen" in src_main
+    assert "build_pin_setup" in src_main
+    assert "build_splash" in src_main
+    assert "assets_dir" in src_main or "assets" in src_main
+    assert "window.icon" in src_main or "window_icon" in src_main
+    assert "lock" in src_main and "pin_setup" in src_main
+
+    src_lock = (ROOT / "app/ui/screens/lock_screen.py").read_text(encoding="utf-8")
+    assert "Введите PIN" in src_lock
+    assert "Face ID" in src_lock
+    src_setup = (ROOT / "app/ui/screens/pin_setup.py").read_text(encoding="utf-8")
+    assert "Защитите приложение" in src_setup
+    assert "Настроить позже" in src_setup
+    src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
+    assert "Сменить PIN" in src_set or "сменить PIN" in src_set
+    assert "биометр" in src_set.lower() or "Face ID" in src_set
+    assert "FEATURE_COUNT = 73" in src_set
+    assert "A–AR" in src_set or "A-AR" in src_set
+
+    icon = ROOT / "assets" / "icon.png"
+    assert icon.is_file(), "assets/icon.png required"
+    raw = icon.read_bytes()
+    assert raw[:8] == b"\x89PNG\r\n\x1a\n"
+    assert len(raw) > 200
+    icon192 = ROOT / "assets" / "icon-192.png"
+    assert icon192.is_file(), "assets/icon-192.png required"
+    raw192 = icon192.read_bytes()
+    assert raw192[:8] == b"\x89PNG\r\n\x1a\n"
+    w192, h192 = struct.unpack(">II", raw192[16:24])
+    assert (w192, h192) == (192, 192)
+
+    for need in (
+        "app.services.lock_service",
+        "app.ui.screens.lock_screen",
+        "app.ui.screens.pin_setup",
+        "app.ui.screens.splash",
+    ):
+        assert need in LINT_MODULES, need
+
+    rd = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "PIN" in rd and ("иконк" in rd.lower() or "icon.png" in rd)
+    cl = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    assert "## AR —" in cl or "## AR " in cl
+    fm = (ROOT / "scripts/feature_matrix.md").read_text(encoding="utf-8")
+    assert "**AR**" in fm
+    print("Wave AR OK")
 
 
     print("== lint imports ==")

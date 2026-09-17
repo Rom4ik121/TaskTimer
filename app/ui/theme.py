@@ -1,7 +1,30 @@
 """Premium dark charcoal theme tokens with live accent."""
 from __future__ import annotations
 
+from pathlib import Path
+
 import flet as ft
+
+ASSETS_DIR = Path(__file__).resolve().parents[2] / "assets"
+ICON_PNG = ASSETS_DIR / "icon.png"
+ICON_PNG_192 = ASSETS_DIR / "icon-192.png"
+ICON_ICO = ASSETS_DIR / "icon.ico"
+
+
+def icon_src(*, small: bool = False) -> str:
+    """Asset-relative name for ``ft.Image`` when ``ft.run(..., assets_dir=assets)``."""
+    if small and ICON_PNG_192.is_file():
+        return "icon-192.png"
+    return "icon.png"
+
+
+def window_icon_path() -> str | None:
+    """Absolute path for ``page.window.icon`` (.ico preferred on Windows)."""
+    if ICON_ICO.is_file():
+        return str(ICON_ICO)
+    if ICON_PNG.is_file():
+        return str(ICON_PNG)
+    return None
 
 BG = "#0F0F12"
 BG_ELEVATED = "#121212"
@@ -169,6 +192,12 @@ def apply_theme(page: ft.Page, *, accent: str | None = None) -> None:
         page.window.height = PHONE_H + 48
         page.window.min_width = 360
         page.window.min_height = 700
+    except Exception:
+        pass
+    try:
+        ic = window_icon_path()
+        if ic:
+            page.window.icon = ic
     except Exception:
         pass
     _set_page_theme(page)
