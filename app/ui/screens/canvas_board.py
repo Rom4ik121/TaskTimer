@@ -39,12 +39,16 @@ def build_canvas_board(
     refresh_all=None,
     on_open_note=None,
 ) -> ft.Control:
-    """Bottom-nav «Холст»: InteractiveViewer + section/note cards + optional roadmap."""
+    """Bottom-nav «Холст»: pan/zoom Stack viewport + section/note cards + optional roadmap."""
     host = ft.Container(expand=True)
     state = {
         "show_roadmap": False,
         "pick_edge_from": None,
-        "framed": False,
+        # Manual pan/zoom (InteractiveViewer is flaky on Flet 0.86 desktop).
+        "scale": 0.85,
+        "pan_x": 8.0,
+        "pan_y": 8.0,
+        "world": None,
     }
 
     def open_note(filename: str, title: str | None = None):
@@ -240,6 +244,10 @@ def build_canvas_board(
                 )
             )
 
+        # Robust viewport (no InteractiveViewer): Flet 0.86 IV with
+        # constrained=False often paints a blank light-gray panel on Linux
+        # desktop / phone-frame — child sizing / transform collapse.
+        # Stack + left/top pan + Scale(TOP_LEFT) + buttons always shows nodes.
         world = ft.Container(
             width=WORLD_W,
             height=WORLD_H,
@@ -250,38 +258,92 @@ def build_canvas_board(
                 height=WORLD_H,
             ),
             clip_behavior=ft.ClipBehavior.HARD_EDGE,
+            left=float(state["pan_x"]),
+            top=float(state["pan_y"]),
+            scale=ft.Scale(
+                float(state["scale"]),
+                alignment=ft.Alignment.TOP_LEFT,
+            ),
         )
+        state["world"] = world
 
-        # Cluster sits top-left of WORLD; align TOP_LEFT + mild zoom-out so
-        # the 2×3 section cards fit the phone frame on first open.
-        viewer = ft.InteractiveViewer(
-            content=world,
-            pan_enabled=True,
-            scale_enabled=True,
-            min_scale=0.35,
-            max_scale=2.8,
-            constrained=False,
-            boundary_margin=ft.Margin.all(400),
-            trackpad_scroll_causes_scale=True,
-            alignment=ft.Alignment.TOP_LEFT,
-            expand=True,
-        )
-
-        async def _frame_first_open():
+        def _apply_view():
+            w = state.get("world")
+            if w is None:
+                return
+            w.left = float(state["pan_x"])
+            w.top = float(state["pan_y"])
+            w.scale = ft.Scale(
+                float(state["scale"]),
+                alignment=ft.Alignment.TOP_LEFT,
+            )
             try:
-                # Zoom out slightly so ~400×430 cluster fits ~390-wide phone.
-                await viewer.zoom(0.88)
-            except Exception as exc:
-                import sys
-
-                print(f"[TaskTimer] canvas frame: {exc}", file=sys.stderr)
-
-        if not state.get("framed"):
-            state["framed"] = True
-            try:
-                page.run_task(_frame_first_open)
+                page.update()
             except Exception:
                 pass
+
+        def _clamp_scale(val: float) -> float:
+            return max(0.35, min(2.8, float(val)))
+
+        def _on_pan_update(e):
+            d = getattr(e, "local_delta", None)
+            if d is None:
+                return
+            try:
+                dx = float(getattr(d, "x", 0) or 0)
+                dy = float(getattr(d, "y", 0) or 0)
+            except (TypeError, ValueError):
+                return
+            state["pan_x"] = float(state["pan_x"]) + dx
+            state["pan_y"] = float(state["pan_y"]) + dy
+            _apply_view()
+
+        def _on_scroll(e):
+            sd = getattr(e, "scroll_delta", None)
+            if sd is None:
+                return
+            try:
+                dy = float(getattr(sd, "y", 0) or 0)
+            except (TypeError, ValueError):
+                return
+            if dy == 0:
+                return
+            # Wheel up → zoom in
+            factor = 1.08 if dy < 0 else (1 / 1.08)
+            state["scale"] = _clamp_scale(float(state["scale"]) * factor)
+            _apply_view()
+
+        def _zoom_in(_e=None):
+            state["scale"] = _clamp_scale(float(state["scale"]) * 1.15)
+            _apply_view()
+
+        def _zoom_out(_e=None):
+            state["scale"] = _clamp_scale(float(state["scale"]) / 1.15)
+            _apply_view()
+
+        def _frame_home(_e=None):
+            # Section cluster is seeded near (40,80)–(388,428); show it.
+            state["scale"] = 0.85
+            state["pan_x"] = 8.0
+            state["pan_y"] = 8.0
+            _apply_view()
+
+        def _nudge(dx: float, dy: float):
+            def _h(_e=None, _dx=dx, _dy=dy):
+                state["pan_x"] = float(state["pan_x"]) + _dx
+                state["pan_y"] = float(state["pan_y"]) + _dy
+                _apply_view()
+
+            return _h
+
+        viewer = ft.GestureDetector(
+            content=ft.Stack([world], expand=True),
+            on_pan_update=_on_pan_update,
+            on_scroll=_on_scroll,
+            drag_interval=16,
+            mouse_cursor=ft.MouseCursor.GRAB,
+            expand=True,
+        )
 
         def add_note_node(_):
             title_f = ft.TextField(
@@ -434,44 +496,40 @@ def build_canvas_board(
                 )
             )
 
+        def _chip(label: str, on_click, *, filled: bool = False, soft: bool = False):
+            return ft.Container(
+                content=ft.Text(
+                    label,
+                    size=11,
+                    weight=ft.FontWeight.W_700 if filled else None,
+                    color="#0F0F12" if filled else TEXT,
+                ),
+                bgcolor=ORANGE if filled else (ORANGE_SOFT if soft else "transparent"),
+                padding=ft.Padding.symmetric(horizontal=10, vertical=7),
+                border_radius=ft.BorderRadius.all(10),
+                border=None
+                if filled
+                else ft.Border.all(1, ORANGE if soft else BORDER),
+                on_click=on_click,
+                ink=True,
+            )
+
         toolbar = ft.Row(
             [
-                ft.Container(
-                    content=ft.Text(
-                        "+ Заметка",
-                        size=11,
-                        weight=ft.FontWeight.W_700,
-                        color="#0F0F12",
-                    ),
-                    bgcolor=ORANGE,
-                    padding=ft.Padding.symmetric(horizontal=10, vertical=7),
-                    border_radius=ft.BorderRadius.all(10),
-                    on_click=add_note_node,
-                    ink=True,
+                _chip("+ Заметка", add_note_node, filled=True),
+                _chip(
+                    "Роадмап" if not state["show_roadmap"] else "Скрыть RM",
+                    toggle_roadmap,
+                    soft=bool(state["show_roadmap"]),
                 ),
-                ft.Container(
-                    content=ft.Text(
-                        "Роадмап" if not state["show_roadmap"] else "Скрыть RM",
-                        size=11,
-                        color=TEXT,
-                    ),
-                    padding=ft.Padding.symmetric(horizontal=10, vertical=7),
-                    border_radius=ft.BorderRadius.all(10),
-                    border=ft.Border.all(
-                        1, ORANGE if state["show_roadmap"] else BORDER
-                    ),
-                    bgcolor=ORANGE_SOFT if state["show_roadmap"] else "transparent",
-                    on_click=toggle_roadmap,
-                    ink=True,
-                ),
-                ft.Container(
-                    content=ft.Text("Разделы", size=11, color=TEXT),
-                    padding=ft.Padding.symmetric(horizontal=10, vertical=7),
-                    border_radius=ft.BorderRadius.all(10),
-                    border=ft.Border.all(1, BORDER),
-                    on_click=open_section_picker,
-                    ink=True,
-                ),
+                _chip("Разделы", open_section_picker),
+                _chip("−", _zoom_out),
+                _chip("+", _zoom_in),
+                _chip("⌂", _frame_home),
+                _chip("←", _nudge(48, 0)),
+                _chip("→", _nudge(-48, 0)),
+                _chip("↑", _nudge(0, 48)),
+                _chip("↓", _nudge(0, -48)),
             ],
             spacing=6,
             wrap=True,
@@ -482,13 +540,16 @@ def build_canvas_board(
             [
                 screen_header(
                     "Холст",
-                    subtitle="Щипок / колесо — зум · перетащите фон — пан · тап — MD",
+                    subtitle="Перетащите · колесо/± зум · ⌂ домой · тап — MD",
                     actions=[muted(f"{len(nodes)} узлов")],
                 ),
                 toolbar,
                 ft.Container(
                     content=viewer,
                     expand=True,
+                    # Floor height so Column expand cannot collapse the board
+                    # to 0 after taller Wave AT headers (phone frame ~390×844).
+                    height=420,
                     border=ft.Border.all(1, BORDER),
                     border_radius=ft.BorderRadius.all(16),
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
