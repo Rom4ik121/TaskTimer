@@ -6,7 +6,7 @@ from pydantic import ValidationError
 
 from app.schemas import NoteWrite
 from app.services import notes_service
-from app.ui.components.dialogs import show_snack
+from app.ui.components.dialogs import ru_validation_message, show_toast, validation_fail
 from app.ui.theme import BG, BORDER, CARD, MUTED, ORANGE, TEXT, muted
 
 
@@ -53,7 +53,7 @@ def build_note_editor(
             try:
                 name = notes_service.sanitize_filename(u)
             except ValueError:
-                show_snack(page, "Небезопасная ссылка", error=True)
+                show_toast(page, "Небезопасная ссылка", kind="error")
                 return
             if notes_service.note_exists(name):
                 state["filename"] = name
@@ -62,23 +62,26 @@ def build_note_editor(
                 state["mode"] = "preview"
                 paint()
                 return
-            show_snack(page, f"Нет файла {name}", error=True)
+            show_toast(page, f"Нет файла {name}", kind="error")
             return
         # External — open if page supports
         try:
             page.launch_url(u)
         except Exception:
-            show_snack(page, u[:80])
+            show_toast(page, u[:80], kind="info")
 
     def save():
+        if not (state["filename"] or "").strip():
+            validation_fail(page, "Укажите имя файла .md")
+            return
         try:
             data = NoteWrite(filename=state["filename"], content=state["content"] or "")
         except ValidationError as exc:
-            show_snack(page, f"Ошибка: {exc.errors()[0]['msg']}", error=True)
+            validation_fail(page, ru_validation_message(exc, fallback="Не удалось сохранить заметку"))
             return
         notes_service.write_note(data.filename, data.content)
         state["dirty"] = False
-        show_snack(page, "Сохранено")
+        show_toast(page, "Сохранено", kind="success")
         # Local paint only — avoid full-app remount that would drop edit mode.
         paint()
 

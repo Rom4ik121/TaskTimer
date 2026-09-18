@@ -95,6 +95,7 @@
 72. **Wave AQ — Холст + Markdown vault**: бесконечный pan/zoom холст (вкладка «Холст»), секции = `.md` файлы в `data/notes/`, редактор Preview/Edit (GFM), schema 13 (`canvas_nodes` / `canvas_edges`)
 73. **Wave AR — PIN-лок и иконка**: первый запуск (splash → онбординг → настройка PIN / «Настроить позже»); повторный запуск с локом — экран PIN; солёный PBKDF2-хеш; Face ID-переключатель с fallback на desktop; `assets/icon.png`
 74. **Wave AS — iOS IPA ready**: `pyproject.toml` / fullscreen iPhone layout / `icon_ios.png` / docs/IOS_BUILD.md; FEATURE_COUNT 74
+75. **Wave AT — UX polish**: Дом без перегруза (чипы + лист «Сегодня», max 2 баннера); общие тосты/модалки/валидация; шапки секций; FEATURE_COUNT 75
 
 ## Быстрая установка (Windows)
 
@@ -167,6 +168,7 @@ SQLite: `data/tasktimer.db` (создаётся автоматически).
 
 Версия схемы: `SCHEMA_VERSION = 13` в `app_meta`.
 
+- **v13 + Wave AT**: UX polish (Home density, toast/modal/validation API, section headers); FEATURE_COUNT 75; schema 13 без бампа
 - **v13 + Wave AS**: iOS packaging (`pyproject.toml`, fullscreen mobile, `icon_ios.png`, IOS_BUILD.md); FEATURE_COUNT 74; schema 13 без бампа
 - **v13 + Wave AR**: PIN-лок (PBKDF2), splash / setup / lock screens, `assets/icon.png`; FEATURE_COUNT 73; schema 13 без бампа
 - **v13 + Wave AQ**: Infinite canvas tab «Холст»; MD vault `data/notes/`; note editor GFM; canvas_nodes/edges; FEATURE_COUNT 72; schema 12→13

@@ -275,6 +275,121 @@ def muted(text: str, *, size: int = 12) -> ft.Text:
     return ft.Text(text, size=size, color=MUTED)
 
 
+def is_compact_layout(page: ft.Page | None = None, *, compact_ui: bool = False) -> bool:
+    """Dense layout: Settings compact_ui or short viewport height."""
+    if compact_ui:
+        return True
+    if page is None:
+        return False
+    try:
+        h = float(getattr(page, "height", None) or 0)
+    except (TypeError, ValueError):
+        h = 0.0
+    return 0 < h <= 700
+
+
+def screen_insets(*, compact: bool = False) -> ft.Padding:
+    """Horizontal padding for tab/overlay screens; tighter when compact."""
+    side = 12 if compact else 16
+    top = 12 if compact else 16
+    return ft.Padding.only(left=side, right=side, top=top, bottom=6)
+
+
+def header_icon_btn(
+    icon,
+    *,
+    on_click=None,
+    tooltip: str | None = None,
+    accent: bool = False,
+    size: int = 40,
+    icon_size: int = 20,
+    icon_color: str | None = None,
+    badge: ft.Control | None = None,
+    border_color: str | None = None,
+) -> ft.Container:
+    """Square header action used on Home / Tasks / Stats / Settings."""
+    fg = icon_color or ("#0F0F12" if accent else TEXT)
+    inner = ft.Icon(icon, color=fg, size=icon_size)
+    if badge is not None:
+        content: ft.Control = ft.Stack(
+            [
+                ft.Container(
+                    content=inner,
+                    alignment=ft.Alignment.CENTER,
+                    width=size,
+                    height=size,
+                ),
+                badge,
+            ],
+            width=size,
+            height=size,
+        )
+    else:
+        content = inner
+    border = None
+    if not accent:
+        border = ft.Border.all(1, border_color or BORDER)
+    return ft.Container(
+        content=content,
+        width=size,
+        height=size,
+        bgcolor=ORANGE if accent else CARD_ALT,
+        border=border,
+        border_radius=ft.BorderRadius.all(12),
+        alignment=ft.Alignment.CENTER,
+        on_click=on_click,
+        ink=True,
+        tooltip=tooltip,
+    )
+
+
+def screen_header(
+    title: str,
+    *,
+    subtitle: str | None = None,
+    actions: list[ft.Control] | None = None,
+    leading: ft.Control | None = None,
+) -> ft.Control:
+    """Clean section header: title + optional leading / trailing actions."""
+    title_row: list[ft.Control] = []
+    if leading is not None:
+        title_row.append(leading)
+    title_row.append(
+        ft.Text(
+            title,
+            size=22,
+            weight=ft.FontWeight.W_700,
+            color=TEXT,
+            expand=True,
+            max_lines=1,
+            overflow=ft.TextOverflow.ELLIPSIS,
+        )
+    )
+    if actions:
+        title_row.extend(actions)
+    col: list[ft.Control] = [
+        ft.Row(
+            title_row,
+            spacing=6,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        )
+    ]
+    if subtitle:
+        col.append(muted(subtitle))
+    return ft.Column(col, spacing=4)
+
+
+def group_heading(text: str) -> ft.Control:
+    """Quiet settings/list group title + divider (less noisy than a 15px heading)."""
+    return ft.Column(
+        [
+            ft.Text(text, size=12, weight=ft.FontWeight.W_600, color=MUTED),
+            ft.Divider(height=1, color=BORDER),
+        ],
+        spacing=6,
+    )
+
+
 
 def markdown_lite(
     text: str,

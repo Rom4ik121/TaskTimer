@@ -21,17 +21,34 @@ from app.services.goal_service import add_progress
 from app.ui.components.cards import (
     empty_state,
     goal_card,
-    heatmap_grid,
-    stat_tile,
     streak_badge_chip,
     task_card,
     today_quota_card,
-    week_activity_strip,
 )
-from app.ui.components.dialogs import confirm_delete, show_snack
-from app.ui.components.progress_ring import donut_progress, mini_ring
+from app.ui.components.dialogs import (
+    confirm_delete,
+    show_info,
+    show_toast,
+    validation_fail,
+)
+from app.ui.components.progress_ring import mini_ring
 from app.ui.screens.onboarding import maybe_show_onboarding
-from app.ui.theme import BORDER, MUTED, ORANGE, RED, TEXT, card_style, muted, section_title
+from app.ui.theme import (
+    BORDER,
+    MUTED,
+    ORANGE,
+    RED,
+    TEXT,
+    card_style,
+    header_icon_btn,
+    is_compact_layout,
+    muted,
+    screen_insets,
+    section_title,
+)
+
+# Cap simultaneous Home banners; the rest sit behind «ещё» / Reminders.
+MAX_HOME_BANNERS = 2
 
 
 def build_home(
@@ -49,14 +66,14 @@ def build_home(
     on_open_search=None,
     on_open_note=None,
 ) -> ft.Control:
-    body = ft.Column(spacing=14, scroll=ft.ScrollMode.AUTO, expand=True)
+    body = ft.Column(spacing=12, scroll=ft.ScrollMode.AUTO, expand=True)
     # Wave X: undo last quick progress log (30s window); page-local state
     undo_state: dict = {"log_id": None, "ts": 0.0, "goal_id": None}
+    today_sheet_open = {"value": False}
 
     def reload(_: ft.ControlEvent | None = None):
         body.controls.clear()
         with get_session() as session:
-            stats = analytics_service.overview_stats(session)
             # Wave Y: goals by % desc (most complete first)
             goals = goal_service.list_goals(session, sort="percent")
             quotas = goal_service.today_quotas(session)
@@ -70,7 +87,6 @@ def build_home(
             if active_timer and active_timer.status == "running":
                 active_timer = timer_service.tick(session, active_timer.id) or active_timer
             streaks = streak_service.all_streaks(session)
-            heatmap = analytics_service.activity_heatmap(session, weeks=14)
             settings = settings_service.get_settings(session)
             week_sum = task_service.week_due_summary(
                 session, week_starts_monday=settings.week_starts_monday
@@ -108,18 +124,28 @@ def build_home(
                         last_done_title = lt.title
 
         streak_map = {s.goal_id: s.current_streak for s in streaks}
-        avg = 0.0
-        if goals:
-            avg = sum(g.percent_complete for g in goals) / len(goals)
 
         display = settings.display_name or "Рома"
         compact = bool(getattr(settings, "compact_ui", False))
+        dense = is_compact_layout(page, compact_ui=compact)
+        body.spacing = 8 if dense else 12
 
         done_q = sum(1 for q in quotas if q.get("complete"))
         total_q = len(quotas)
         best_streak = max((s.best_streak for s in streaks), default=0) if streaks else 0
 
-        def _mini_chip(label: str, value: str, *, accent: bool = False) -> ft.Control:
+        def toggle_today_sheet(_e=None):
+            today_sheet_open["value"] = not today_sheet_open["value"]
+            reload()
+
+        def _mini_chip(
+            label: str,
+            value: str,
+            *,
+            accent: bool = False,
+            on_click=None,
+            tooltip: str | None = None,
+        ) -> ft.Control:
             return ft.Container(
                 content=ft.Row(
                     [
@@ -138,17 +164,24 @@ def build_home(
                 bgcolor="#1C1C22",
                 border=ft.Border.all(1, ORANGE if accent else "#2A2A32"),
                 border_radius=ft.BorderRadius.all(20),
+                on_click=on_click,
+                ink=bool(on_click),
+                tooltip=tooltip,
             )
 
         quota_chip = _mini_chip(
             "Квоты",
             f"{done_q}/{total_q}" if total_q else "—",
             accent=total_q > 0 and done_q == total_q,
+            on_click=toggle_today_sheet,
+            tooltip="Сегодня · квоты",
         )
         streak_chip = _mini_chip(
             "Рекорд",
             f"🔥 {best_streak}" if best_streak else "—",
             accent=best_streak > 0,
+            on_click=toggle_today_sheet,
+            tooltip="Сегодня · серии",
         )
 
         mom_color = ORANGE if momentum.score >= 60 else (MUTED if momentum.score < 35 else "#4C8DFF")
@@ -183,6 +216,8 @@ def build_home(
                 f"задачи {momentum.completion_pct:.0f}% · "
                 f"серия {momentum.streak_pct:.0f}%"
             ),
+            on_click=None,
+            ink=True,
         )
 
         active_n = sum(1 for t in all_active if t.status != "done")
@@ -190,132 +225,101 @@ def build_home(
             "Задачи",
             str(active_n),
             accent=active_n > 0,
+            tooltip="Активные задачи ниже",
         )
 
-        header_col_items: list[ft.Control] = [
-            muted(f"Привет, {display}"),
-            ft.Text("Сегодня", size=26, weight=ft.FontWeight.W_700, color=TEXT),
-            ft.Row(
-                [quota_chip, streak_chip, momentum_chip, tasks_chip],
-                spacing=8,
-                wrap=True,
+        rem_badge = None
+        if rem_count:
+            rem_badge = ft.Container(
+                content=ft.Text(
+                    str(rem_count) if rem_count < 10 else "9+",
+                    size=9,
+                    weight=ft.FontWeight.W_700,
+                    color="#0F0F12",
+                ),
+                bgcolor=ORANGE,
+                width=16,
+                height=16,
+                border_radius=ft.BorderRadius.all(8),
+                alignment=ft.Alignment.CENTER,
+                right=2,
+                top=2,
+            )
+        icon_size = 36 if dense else 40
+        header_actions: list[ft.Control] = [
+            header_icon_btn(
+                ft.Icons.NOTIFICATIONS_NONE,
+                on_click=lambda e: on_open_reminders() if on_open_reminders else None,
+                tooltip="Напоминания",
+                size=icon_size,
+                badge=rem_badge,
+                border_color=ORANGE if rem_count else BORDER,
             ),
         ]
-        if today_est > 0:
-            header_col_items.append(
-                muted(f"Оценка на сегодня: {today_est} мин")
-            )
-        header = ft.Row(
-            [
-                ft.Column(
-                    header_col_items,
-                    spacing=4,
-                    expand=True,
-                ),
-                ft.Container(
-                    content=ft.Icon(ft.Icons.DESCRIPTION_OUTLINED, color=ORANGE, size=20),
-                    width=40,
-                    height=40,
-                    bgcolor="#1C1C22",
-                    border=ft.Border.all(1, BORDER),
-                    border_radius=ft.BorderRadius.all(12),
-                    alignment=ft.Alignment.CENTER,
-                    on_click=lambda e: on_open_note("home.md", "Дом") if on_open_note else None,
-                    ink=True,
-                    tooltip="Заметка · home.md",
-                ),
-                ft.Container(
-                    content=ft.Stack(
-                        [
-                            ft.Container(
-                                content=ft.Icon(ft.Icons.NOTIFICATIONS_NONE, color=TEXT, size=20),
-                                alignment=ft.Alignment.CENTER,
-                                width=40,
-                                height=40,
-                            ),
-                            *(
-                                [
-                                    ft.Container(
-                                        content=ft.Text(
-                                            str(rem_count) if rem_count < 10 else "9+",
-                                            size=9,
-                                            weight=ft.FontWeight.W_700,
-                                            color="#0F0F12",
-                                        ),
-                                        bgcolor=ORANGE if rem_count else MUTED,
-                                        width=16,
-                                        height=16,
-                                        border_radius=ft.BorderRadius.all(8),
-                                        alignment=ft.Alignment.CENTER,
-                                        right=2,
-                                        top=2,
-                                    )
-                                ]
-                                if rem_count
-                                else []
-                            ),
-                        ],
-                        width=40,
-                        height=40,
-                    ),
-                    width=40,
-                    height=40,
-                    bgcolor="#1C1C22",
-                    border=ft.Border.all(1, ORANGE if rem_count else "#2A2A32"),
-                    border_radius=ft.BorderRadius.all(12),
-                    alignment=ft.Alignment.CENTER,
-                    on_click=lambda e: on_open_reminders() if on_open_reminders else None,
-                    ink=True,
-                    tooltip="Напоминания",
-                ),
-                ft.Container(
-                    content=ft.Icon(ft.Icons.SEARCH, color=TEXT, size=20),
-                    width=40,
-                    height=40,
-                    bgcolor="#1C1C22",
-                    border=ft.Border.all(1, "#2A2A32"),
-                    border_radius=ft.BorderRadius.all(12),
-                    alignment=ft.Alignment.CENTER,
+        if not dense:
+            header_actions.append(
+                header_icon_btn(
+                    ft.Icons.SEARCH,
                     on_click=lambda e: on_open_search() if on_open_search else None,
-                    ink=True,
                     tooltip="Поиск",
-                ),
-                ft.Container(
-                    content=ft.Icon(ft.Icons.SETTINGS_OUTLINED, color=TEXT, size=20),
-                    width=40,
-                    height=40,
-                    bgcolor="#1C1C22",
-                    border=ft.Border.all(1, "#2A2A32"),
-                    border_radius=ft.BorderRadius.all(12),
-                    alignment=ft.Alignment.CENTER,
+                    size=icon_size,
+                )
+            )
+        header_actions.extend(
+            [
+                header_icon_btn(
+                    ft.Icons.SETTINGS_OUTLINED,
                     on_click=lambda e: on_open_settings() if on_open_settings else None,
-                    ink=True,
                     tooltip="Настройки",
+                    size=icon_size,
                 ),
-                ft.Container(
-                    content=ft.Icon(ft.Icons.TIMER_OUTLINED, color=TEXT, size=20),
-                    width=40,
-                    height=40,
-                    bgcolor="#1C1C22",
-                    border=ft.Border.all(1, "#2A2A32"),
-                    border_radius=ft.BorderRadius.all(12),
-                    alignment=ft.Alignment.CENTER,
-                    on_click=lambda e: on_open_focus() if on_open_focus else None,
-                    ink=True,
-                ),
-                ft.Container(
-                    content=ft.Icon(ft.Icons.ADD_ROUNDED, color="#0F0F12", size=22),
-                    width=40,
-                    height=40,
-                    bgcolor=ORANGE,
-                    border_radius=ft.BorderRadius.all(12),
-                    alignment=ft.Alignment.CENTER,
+                header_icon_btn(
+                    ft.Icons.ADD_ROUNDED,
                     on_click=lambda e: on_add(),
-                    ink=True,
+                    tooltip="Создать",
+                    accent=True,
+                    size=icon_size,
+                    icon_size=22,
+                ),
+            ]
+        )
+        header = ft.Column(
+            [
+                ft.Row(
+                    [
+                        ft.Column(
+                            [
+                                muted(f"Привет, {display}"),
+                                ft.Text(
+                                    "Сегодня",
+                                    size=22 if dense else 24,
+                                    weight=ft.FontWeight.W_700,
+                                    color=TEXT,
+                                    max_lines=1,
+                                    overflow=ft.TextOverflow.ELLIPSIS,
+                                ),
+                            ],
+                            spacing=2,
+                            expand=True,
+                        ),
+                        *header_actions,
+                    ],
+                    spacing=6,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+                ft.Row(
+                    [quota_chip, streak_chip, momentum_chip, tasks_chip],
+                    spacing=8,
+                    wrap=True,
+                    run_spacing=6,
+                ),
+                *(
+                    [muted(f"Оценка на сегодня: {today_est} мин")]
+                    if today_est > 0
+                    else []
                 ),
             ],
-            spacing=6,
-            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=8,
         )
 
 
@@ -487,61 +491,9 @@ def build_home(
                 border_radius=ft.BorderRadius.all(14),
             )
 
-        hero = ft.Container(
-            content=ft.Row(
-                [
-                    donut_progress(avg, size=128, thickness=16, subtitle="цели"),
-                    ft.Column(
-                        [
-                            muted("Общий прогресс"),
-                            ft.Text(f"{avg:.0f}%", size=32, weight=ft.FontWeight.W_700, color=TEXT),
-                            ft.Text(
-                                f"{stats.active_tasks} активных · {stats.done_tasks} готово",
-                                size=12,
-                                color=MUTED,
-                            ),
-                            ft.Text(
-                                f"Завершение {stats.completion_rate}%",
-                                size=12,
-                                color=ORANGE,
-                                weight=ft.FontWeight.W_600,
-                            ),
-                            *(
-                                [
-                                    ft.Text(
-                                        f"Просрочено: {stats.overdue_tasks}",
-                                        size=12,
-                                        color=MUTED if quiet else RED,
-                                        weight=ft.FontWeight.W_600,
-                                    )
-                                ]
-                                if stats.overdue_tasks
-                                else []
-                            ),
-                        ],
-                        spacing=4,
-                        expand=True,
-                    ),
-                ],
-                spacing=16,
-                vertical_alignment=ft.CrossAxisAlignment.CENTER,
-            ),
-            padding=16,
-            **card_style(accent=True),
-        )
-
-        tiles = ft.Row(
-            [
-                stat_tile("Задачи", str(stats.total_tasks), accent=ORANGE),
-                stat_tile("Цели", str(stats.goals), accent="#4C8DFF"),
-                stat_tile("Готово", str(stats.done_tasks), accent="#3DDC97"),
-            ],
-            spacing=10,
-        )
-
         def _offer_undo_snack(log, message: str) -> None:
             if log is None:
-                show_snack(page, message)
+                show_toast(page, message, kind="success")
                 return
             undo_state["log_id"] = int(log.id)
             undo_state["ts"] = time.time()
@@ -551,22 +503,23 @@ def build_home(
                 lid = undo_state.get("log_id")
                 ts = float(undo_state.get("ts") or 0)
                 if not lid or (time.time() - ts) > 30:
-                    show_snack(page, "Слишком поздно отменять", error=True)
+                    show_toast(page, "Слишком поздно отменять", kind="warning")
                     return
                 with get_session() as session:
                     ok = goal_service.delete_log(session, int(lid))
                 undo_state["log_id"] = None
                 undo_state["ts"] = 0.0
                 if ok:
-                    show_snack(page, "Лог отменён")
+                    show_toast(page, "Лог отменён", kind="success")
                     reload()
                     page.update()
                 else:
-                    show_snack(page, "Лог уже удалён", error=True)
+                    show_toast(page, "Лог уже удалён", kind="error")
 
-            show_snack(
+            show_toast(
                 page,
                 message,
+                kind="success",
                 action_label="Отменить",
                 on_action=do_undo,
                 duration_ms=30_000,
@@ -578,14 +531,14 @@ def build_home(
                 try:
                     amount = float(str(raw).replace(",", "."))
                 except ValueError:
-                    show_snack(page, "Введите число", error=True)
+                    validation_fail(page, "Введите число", amount_field)
                     return
                 try:
                     payload = ProgressLogCreate(
                         goal_id=goal_id, amount=amount, note="Быстрый лог"
                     )
                 except ValidationError:
-                    show_snack(page, "Сумма должна быть больше 0", error=True)
+                    validation_fail(page, "Сумма должна быть больше 0", amount_field)
                     return
                 with get_session() as session:
                     log = add_progress(session, payload)
@@ -629,7 +582,7 @@ def build_home(
                         goal_id=goal_id, amount=amount, note="Быстрый +квота"
                     )
                 except ValidationError:
-                    show_snack(page, "Не удалось заполнить квоту", error=True)
+                    show_toast(page, "Не удалось заполнить квоту", kind="error")
                     return
                 log = add_progress(session, payload)
                 celeb = goal_service.celebrate_if_complete(session, goal_id)
@@ -751,26 +704,8 @@ def build_home(
             )
         ]
         task_section = ft.Column(
-            [section_title("Активные задачи")] + task_cards,
-            spacing=10,
-        )
-
-        heat_section = ft.Container(
-            content=ft.Column(
-                [
-                    ft.Text(
-                        "Активность · 14 недель",
-                        size=14,
-                        weight=ft.FontWeight.W_600,
-                        color=TEXT,
-                    ),
-                    heatmap_grid(heatmap, week_starts_monday=settings.week_starts_monday),
-                    week_activity_strip(heatmap[-7:] if len(heatmap) >= 7 else heatmap),
-                ],
-                spacing=10,
-            ),
-            padding=16,
-            **card_style(),
+            [section_title("Задачи · сегодня")] + task_cards,
+            spacing=8 if dense else 10,
         )
 
         timer_chip = None
@@ -802,9 +737,9 @@ def build_home(
             with get_session() as session:
                 n = task_service.snooze_all_overdue(session, days=1)
             if n:
-                show_snack(page, f"Отложено +1 день: {n}")
+                show_toast(page, f"Отложено +1 день: {n}", kind="success")
             else:
-                show_snack(page, "Нечего откладывать")
+                show_toast(page, "Нечего откладывать", kind="info")
             refresh_all()
 
         overdue_banner = None
@@ -814,7 +749,7 @@ def build_home(
             if n > 3:
                 titles += "…"
             rem_rows = []
-            for t in overdue_tasks[:4]:
+            for t in overdue_tasks[: (2 if dense else 4)]:
                 rem_rows.append(
                     ft.Container(
                         content=ft.Row(
@@ -893,7 +828,7 @@ def build_home(
         if due_today_tasks and not quiet:
             n = len(due_today_tasks)
             dt_rows = []
-            for t in due_today_tasks[:4]:
+            for t in due_today_tasks[: (2 if dense else 4)]:
                 dt_rows.append(
                     ft.Container(
                         content=ft.Row(
@@ -1154,48 +1089,52 @@ def build_home(
                 border=ft.Border.all(1, BORDER),
                 border_radius=ft.BorderRadius.all(12),
             )
-            page.show_dialog(
-                ft.AlertDialog(
-                    title=ft.Text("Итог дня", color=TEXT),
-                    content=ft.Column(
-                        [
-                            muted(f"Сегодня · {wrap.day.isoformat()}"),
-                            *rows,
-                            tip_block,
-                        ],
-                        spacing=8,
-                        tight=True,
-                        scroll=ft.ScrollMode.AUTO,
-                        width=320,
-                    ),
-                    actions=[
-                        ft.TextButton("Закрыть", on_click=lambda e: page.pop_dialog()),
+            show_info(
+                page,
+                title="Итог дня",
+                content=ft.Column(
+                    [
+                        muted(f"Сегодня · {wrap.day.isoformat()}"),
+                        *rows,
+                        tip_block,
                     ],
-                )
+                    spacing=8,
+                    tight=True,
+                    scroll=ft.ScrollMode.AUTO,
+                    width=320,
+                ),
+                ok_label="Закрыть",
             )
 
-        wrap_btn = ft.Container(
-            content=ft.Row(
-                [
-                    ft.Icon(ft.Icons.NIGHTLIGHT_ROUND, color=ORANGE, size=16),
-                    ft.Text(
-                        "Итог дня",
-                        size=13,
-                        weight=ft.FontWeight.W_700,
-                        color=ORANGE,
-                    ),
-                ],
-                spacing=8,
-                alignment=ft.MainAxisAlignment.CENTER,
-            ),
-            padding=ft.Padding.symmetric(horizontal=14, vertical=10),
-            bgcolor="#2A1C12",
-            border=ft.Border.all(1, ORANGE),
-            border_radius=ft.BorderRadius.all(14),
-            on_click=show_daily_wrap,
-            ink=True,
-            tooltip="Сводка за сегодня",
-            expand=True,
+        def _digest_chip(label: str, icon, on_click, tooltip: str) -> ft.Control:
+            return ft.Container(
+                content=ft.Row(
+                    [
+                        ft.Icon(icon, color=ORANGE, size=14),
+                        ft.Text(
+                            label,
+                            size=12,
+                            weight=ft.FontWeight.W_600,
+                            color=TEXT,
+                        ),
+                    ],
+                    spacing=6,
+                    tight=True,
+                ),
+                padding=ft.Padding.symmetric(horizontal=10, vertical=7),
+                bgcolor="#1C1C22",
+                border=ft.Border.all(1, BORDER),
+                border_radius=ft.BorderRadius.all(16),
+                on_click=on_click,
+                ink=True,
+                tooltip=tooltip,
+            )
+
+        wrap_btn = _digest_chip(
+            "Итог",
+            ft.Icons.NIGHTLIGHT_ROUND,
+            show_daily_wrap,
+            "Сводка за сегодня",
         )
 
         def show_morning_briefing(_e=None):
@@ -1289,50 +1228,31 @@ def build_home(
                 border=ft.Border.all(1, BORDER),
                 border_radius=ft.BorderRadius.all(12),
             )
-            page.show_dialog(
-                ft.AlertDialog(
-                    title=ft.Text("Брифинг", color=TEXT),
-                    content=ft.Column(
-                        [
-                            muted(f"Утро · {brief.day.isoformat()}"),
-                            *rows,
-                            quota_block,
-                            tip_block,
-                        ],
-                        spacing=8,
-                        tight=True,
-                        scroll=ft.ScrollMode.AUTO,
-                        width=320,
-                    ),
-                    actions=[
-                        ft.TextButton("Закрыть", on_click=lambda e: page.pop_dialog()),
+            show_info(
+                page,
+                title="Брифинг",
+                content=ft.Column(
+                    [
+                        muted(f"Утро · {brief.day.isoformat()}"),
+                        *rows,
+                        quota_block,
+                        tip_block,
                     ],
-                )
+                    spacing=8,
+                    tight=True,
+                    scroll=ft.ScrollMode.AUTO,
+                    width=320,
+                ),
+                ok_label="Закрыть",
             )
 
-        briefing_btn = ft.Container(
-            content=ft.Row(
-                [
-                    ft.Icon(ft.Icons.WB_SUNNY_OUTLINED, color=ORANGE, size=16),
-                    ft.Text(
-                        "Брифинг",
-                        size=13,
-                        weight=ft.FontWeight.W_700,
-                        color=ORANGE,
-                    ),
-                ],
-                spacing=8,
-                alignment=ft.MainAxisAlignment.CENTER,
-            ),
-            padding=ft.Padding.symmetric(horizontal=14, vertical=10),
-            bgcolor="#2A1C12",
-            border=ft.Border.all(1, ORANGE),
-            border_radius=ft.BorderRadius.all(14),
-            on_click=show_morning_briefing,
-            ink=True,
-            tooltip="Утренний обзор",
-            expand=True,
+        briefing_btn = _digest_chip(
+            "Брифинг",
+            ft.Icons.WB_SUNNY_OUTLINED,
+            show_morning_briefing,
+            "Утренний обзор",
         )
+        momentum_chip.on_click = show_morning_briefing
 
         def show_tomorrow_plan(_e=None):
             with get_session() as session:
@@ -1438,54 +1358,36 @@ def build_home(
                 border=ft.Border.all(1, BORDER),
                 border_radius=ft.BorderRadius.all(12),
             )
-            page.show_dialog(
-                ft.AlertDialog(
-                    title=ft.Text("План на завтра", color=TEXT),
-                    content=ft.Column(
-                        [
-                            muted(f"Завтра · {plan.day.isoformat()}"),
-                            due_block,
-                            open_block,
-                            tip_block,
-                        ],
-                        spacing=8,
-                        tight=True,
-                        scroll=ft.ScrollMode.AUTO,
-                        width=320,
-                    ),
-                    actions=[
-                        ft.TextButton("Закрыть", on_click=lambda e: page.pop_dialog()),
+            show_info(
+                page,
+                title="План на завтра",
+                content=ft.Column(
+                    [
+                        muted(f"Завтра · {plan.day.isoformat()}"),
+                        due_block,
+                        open_block,
+                        tip_block,
                     ],
-                )
+                    spacing=8,
+                    tight=True,
+                    scroll=ft.ScrollMode.AUTO,
+                    width=320,
+                ),
+                ok_label="Закрыть",
             )
 
-        tomorrow_btn = ft.Container(
-            content=ft.Row(
-                [
-                    ft.Icon(ft.Icons.EVENT_OUTLINED, color=ORANGE, size=16),
-                    ft.Text(
-                        "Завтра",
-                        size=13,
-                        weight=ft.FontWeight.W_700,
-                        color=ORANGE,
-                    ),
-                ],
-                spacing=8,
-                alignment=ft.MainAxisAlignment.CENTER,
-            ),
-            padding=ft.Padding.symmetric(horizontal=14, vertical=10),
-            bgcolor="#2A1C12",
-            border=ft.Border.all(1, ORANGE),
-            border_radius=ft.BorderRadius.all(14),
-            on_click=show_tomorrow_plan,
-            ink=True,
-            tooltip="План на завтра",
-            expand=True,
+        tomorrow_btn = _digest_chip(
+            "Завтра",
+            ft.Icons.EVENT_OUTLINED,
+            show_tomorrow_plan,
+            "План на завтра",
         )
 
         brief_wrap_row = ft.Row(
             [briefing_btn, wrap_btn, tomorrow_btn],
             spacing=8,
+            wrap=True,
+            run_spacing=6,
         )
 
         # Wave AI: weekly goal progress (ISO week completed_at / target)
@@ -1596,16 +1498,16 @@ def build_home(
         def do_quick_capture(_e=None):
             raw = (capture_field.value or "").strip()
             if not raw:
-                show_snack(page, "Введите название", error=True)
+                validation_fail(page, "Введите название", capture_field)
                 return
             try:
                 with get_session() as session:
                     task_service.quick_capture(session, raw)
             except Exception as exc:
-                show_snack(page, str(exc), error=True)
+                show_toast(page, str(exc), kind="error")
                 return
             capture_field.value = ""
-            show_snack(page, "В inbox")
+            show_toast(page, "В inbox", kind="success")
             reload()
             refresh_all()
 
@@ -1650,7 +1552,7 @@ def build_home(
             text = note_field.value or ""
             with get_session() as session:
                 settings_service.set_daily_note(session, text)
-            show_snack(page, "Заметка сохранена")
+            show_toast(page, "Заметка сохранена", kind="success")
             page.update()
 
         daily_note_card = ft.Container(
@@ -1700,9 +1602,9 @@ def build_home(
                 with get_session() as session:
                     restored = task_service.undo_last_complete(session)
                 if restored:
-                    show_snack(page, f"↩ Отменено: {restored.title}")
+                    show_toast(page, f"↩ Отменено: {restored.title}", kind="success")
                 else:
-                    show_snack(page, "Нечего отменять", error=True)
+                    show_toast(page, "Нечего отменять", kind="error")
                 reload()
                 refresh_all()
 
@@ -1736,48 +1638,126 @@ def build_home(
                 tooltip="Вернуть последнюю завершённую задачу",
             )
 
-        controls = [header, tip_line]
-        if backup_tip:
-            controls.append(backup_tip)
-        if smart_card:
-            controls.append(smart_card)
+        # Banner cap: at most MAX_HOME_BANNERS on Home; rest → «ещё» / Reminders.
+        banner_candidates: list[ft.Control] = []
+        if overdue_banner:
+            banner_candidates.append(overdue_banner)
         if evening_card:
-            controls.append(evening_card)
-        controls.append(week_goal_card)
-        controls.extend([capture_row, daily_note_card])
+            banner_candidates.append(evening_card)
+        if smart_card:
+            banner_candidates.append(smart_card)
+        if backup_tip:
+            banner_candidates.append(backup_tip)
+        shown_banners = banner_candidates[:MAX_HOME_BANNERS]
+        hidden_banner_n = max(0, len(banner_candidates) - MAX_HOME_BANNERS)
+        more_chip = None
+        if hidden_banner_n:
+            more_chip = _digest_chip(
+                f"ещё {hidden_banner_n}",
+                ft.Icons.MORE_HORIZ,
+                lambda e: on_open_reminders() if on_open_reminders else None,
+                "Остальные напоминания",
+            )
+
+        sheet_open = bool(today_sheet_open["value"])
+        today_toggle = ft.Container(
+            content=ft.Row(
+                [
+                    ft.Text(
+                        "Сегодня",
+                        size=14,
+                        weight=ft.FontWeight.W_700,
+                        color=TEXT,
+                    ),
+                    ft.Text(
+                        "свернуть" if sheet_open else "квоты · цели · заметка",
+                        size=11,
+                        color=MUTED,
+                        expand=True,
+                        max_lines=1,
+                        overflow=ft.TextOverflow.ELLIPSIS,
+                    ),
+                    ft.Icon(
+                        ft.Icons.EXPAND_LESS if sheet_open else ft.Icons.EXPAND_MORE,
+                        color=MUTED,
+                        size=20,
+                    ),
+                ],
+                spacing=8,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            ),
+            padding=ft.Padding.symmetric(horizontal=12, vertical=10),
+            bgcolor="#1A1A22",
+            border=ft.Border.all(1, BORDER),
+            border_radius=ft.BorderRadius.all(14),
+            on_click=toggle_today_sheet,
+            ink=True,
+            tooltip="Квоты, цели, заметка дня",
+        )
+
+        digest_row_controls: list[ft.Control] = [briefing_btn, wrap_btn, tomorrow_btn]
+        if more_chip:
+            digest_row_controls.append(more_chip)
+        if on_open_note:
+            digest_row_controls.append(
+                _digest_chip(
+                    "Заметка",
+                    ft.Icons.DESCRIPTION_OUTLINED,
+                    lambda e: on_open_note("home.md", "Дом"),
+                    "home.md",
+                )
+            )
+        if on_open_focus:
+            digest_row_controls.append(
+                _digest_chip(
+                    "Фокус",
+                    ft.Icons.TIMER_OUTLINED,
+                    lambda e: on_open_focus(),
+                    "Таймер фокуса",
+                )
+            )
+        brief_wrap_row = ft.Row(
+            digest_row_controls,
+            spacing=8,
+            wrap=True,
+            run_spacing=6,
+        )
+
+        controls: list[ft.Control] = [header]
+        controls.append(capture_row)
         if undo_chip:
             controls.append(undo_chip)
-        controls.extend([brief_wrap_row, hero, tiles])
-        if overdue_banner:
-            controls.append(overdue_banner)
-        if due_today_banner:
-            controls.append(due_today_banner)
-        if week_banner:
-            controls.append(week_banner)
         if timer_chip:
             controls.append(timer_chip)
-        controls.append(today_section)
-        if streak_row:
-            controls.append(streak_row)
-        if stuck_section:
-            controls.append(stuck_section)
-        controls.extend([goal_section, heat_section, task_section, ft.Container(height=12)])
+        controls.extend(shown_banners)
+        controls.append(task_section)
+        controls.append(brief_wrap_row)
+        controls.append(today_toggle)
+        if sheet_open:
+            controls.append(tip_line)
+            controls.append(week_goal_card)
+            if due_today_banner:
+                controls.append(due_today_banner)
+            if week_banner:
+                controls.append(week_banner)
+            controls.append(today_section)
+            if streak_row:
+                controls.append(streak_row)
+            if stuck_section:
+                controls.append(stuck_section)
+            controls.append(goal_section)
+            controls.append(daily_note_card)
+        controls.append(ft.Container(height=8))
         body.controls.extend(controls)
-        # Wave X compact: slightly tighter outer padding
         try:
-            root.padding = ft.Padding.only(
-                left=12 if compact else 16,
-                right=12 if compact else 16,
-                top=12 if compact else 18,
-                bottom=6 if compact else 8,
-            )
+            root.padding = screen_insets(compact=dense)
         except NameError:
             pass
         page.update()
 
     root = ft.Container(
         content=body,
-        padding=ft.Padding.only(left=16, right=16, top=18, bottom=8),
+        padding=screen_insets(),
         expand=True,
     )
 

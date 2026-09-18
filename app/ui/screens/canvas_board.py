@@ -7,7 +7,13 @@ import flet.canvas as cv
 from app.db import get_session
 from app.schemas import CanvasNodeCreate
 from app.services import canvas_service, notes_service, roadmap_service
-from app.ui.components.dialogs import confirm_delete, show_snack
+from app.ui.components.dialogs import (
+    confirm_delete,
+    set_field_error,
+    show_info,
+    show_toast,
+    validation_fail,
+)
 from app.ui.theme import (
     BG,
     BORDER,
@@ -18,6 +24,8 @@ from app.ui.theme import (
     ORANGE_SOFT,
     TEXT,
     muted,
+    screen_header,
+    screen_insets,
 )
 
 WORLD_W = 2400.0
@@ -43,7 +51,7 @@ def build_canvas_board(
         if on_open_note:
             on_open_note(filename, title)
         else:
-            show_snack(page, f"Заметка: {filename}")
+            show_toast(page, f"Заметка: {filename}", kind="info")
 
     def paint():
         notes_service.ensure_vault()
@@ -134,7 +142,7 @@ def build_canvas_board(
                 elif node.kind == "roadmap":
                     open_note("roadmap.md", "Роадмап")
                 else:
-                    show_snack(page, node.title)
+                    show_toast(page, node.title, kind="info")
 
             return ft.Container(
                 left=float(n.x),
@@ -291,12 +299,20 @@ def build_canvas_board(
             )
 
             def submit(__):
-                title = (title_f.value or "").strip() or "Заметка"
-                raw = (file_f.value or "note.md").strip()
+                set_field_error(title_f, None)
+                set_field_error(file_f, None)
+                title = (title_f.value or "").strip()
+                if not title:
+                    validation_fail(page, "Введите название заметки", title_f)
+                    return
+                raw = (file_f.value or "").strip()
+                if not raw:
+                    validation_fail(page, "Укажите имя файла .md", file_f)
+                    return
                 try:
                     fname = notes_service.sanitize_filename(raw)
                 except ValueError:
-                    show_snack(page, "Некорректное имя файла", error=True)
+                    validation_fail(page, "Имя файла: только *.md без пути", file_f)
                     return
                 if not notes_service.note_exists(fname):
                     try:
@@ -323,7 +339,7 @@ def build_canvas_board(
                         ),
                     )
                 page.pop_dialog()
-                show_snack(page, f"Узел · {fname}")
+                show_toast(page, f"Узел · {fname}", kind="success")
                 paint()
 
             page.show_dialog(
@@ -339,9 +355,10 @@ def build_canvas_board(
 
         def toggle_roadmap(_):
             state["show_roadmap"] = not state["show_roadmap"]
-            show_snack(
+            show_toast(
                 page,
                 "Слой роадмапа вкл" if state["show_roadmap"] else "Слой роадмапа выкл",
+                kind="info",
             )
             paint()
 
@@ -359,27 +376,24 @@ def build_canvas_board(
                     ),
                 )
 
-            page.show_dialog(
-                ft.AlertDialog(
-                    title=ft.Text("Открыть раздел", color=TEXT),
-                    content=ft.Column(
-                        [make_btn(k, v) for k, v in opts],
-                        tight=True,
-                        spacing=4,
-                        height=220,
-                        scroll=ft.ScrollMode.AUTO,
-                    ),
-                    actions=[
-                        ft.TextButton("Закрыть", on_click=lambda e: page.pop_dialog()),
-                    ],
-                )
+            show_info(
+                page,
+                title="Открыть раздел",
+                content=ft.Column(
+                    [make_btn(k, v) for k, v in opts],
+                    tight=True,
+                    spacing=4,
+                    height=220,
+                    scroll=ft.ScrollMode.AUTO,
+                ),
+                ok_label="Закрыть",
             )
 
         def delete_note_node(nid: int):
             def yes():
                 with get_session() as session:
                     canvas_service.delete_node(session, nid)
-                show_snack(page, "Узел удалён")
+                show_toast(page, "Узел удалён", kind="success")
                 paint()
 
             confirm_delete(
@@ -466,19 +480,11 @@ def build_canvas_board(
 
         host.content = ft.Column(
             [
-                ft.Row(
-                    [
-                        ft.Text(
-                            "Холст",
-                            size=24,
-                            weight=ft.FontWeight.W_700,
-                            color=TEXT,
-                            expand=True,
-                        ),
-                        muted(f"{len(nodes)} узлов"),
-                    ]
+                screen_header(
+                    "Холст",
+                    subtitle="Щипок / колесо — зум · перетащите фон — пан · тап — MD",
+                    actions=[muted(f"{len(nodes)} узлов")],
                 ),
-                muted("Щипок / колесо — зум · перетащите фон — пан · тап по карточке — MD"),
                 toolbar,
                 ft.Container(
                     content=viewer,
@@ -505,7 +511,7 @@ def build_canvas_board(
     paint()
     return ft.Container(
         content=host,
-        padding=ft.Padding.only(left=12, right=12, top=14, bottom=6),
+        padding=screen_insets(),
         expand=True,
         bgcolor=BG,
     )

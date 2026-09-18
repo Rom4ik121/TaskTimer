@@ -7,8 +7,14 @@ from pydantic import ValidationError
 from app.db import get_session
 from app.schemas import GoalCreate, TaskCreate
 from app.services import goal_service, task_service
-from app.ui.components.dialogs import pick_date, show_snack
-from app.ui.theme import BORDER, MUTED, ORANGE, TEXT, card_style, muted
+from app.ui.components.dialogs import (
+    pick_date,
+    ru_validation_message,
+    set_field_error,
+    show_toast,
+    validation_fail,
+)
+from app.ui.theme import BORDER, MUTED, ORANGE, TEXT, card_style, muted, screen_header, screen_insets
 
 # Prefill chips for task mode (priority / recur)
 TASK_TEMPLATES: list[tuple[str, dict]] = [
@@ -348,12 +354,33 @@ def build_create_task(page: ft.Page, *, on_done, refresh_all) -> ft.Control:
 
     def save(_):
         err.value = ""
+        set_field_error(title, None)
+        set_field_error(target, None)
+        set_field_error(quota, None)
+        set_field_error(estimate_field, None)
         try:
             if mode["value"] == "task":
+                if not (title.value or "").strip():
+                    validation_fail(page, "Введите название задачи", title)
+                    err.value = "Введите название задачи"
+                    page.update()
+                    return
                 gid = goal_dd.value
                 tag = color_dd.value
                 em_raw = (estimate_field.value or "").strip()
-                em_val = int(em_raw) if em_raw else None
+                em_val = None
+                if em_raw:
+                    try:
+                        em_val = int(em_raw)
+                    except ValueError:
+                        validation_fail(
+                            page,
+                            "Оценка — целое число минут (0–1440)",
+                            estimate_field,
+                        )
+                        err.value = "Оценка — целое число минут (0–1440)"
+                        page.update()
+                        return
                 data = TaskCreate(
                     title=title.value or "",
                     description=description.value or "",
@@ -369,36 +396,66 @@ def build_create_task(page: ft.Page, *, on_done, refresh_all) -> ft.Control:
                 with get_session() as session:
                     task_service.create_task(session, data)
             else:
+                if not (title.value or "").strip():
+                    validation_fail(page, "Введите название цели", title)
+                    err.value = "Введите название цели"
+                    page.update()
+                    return
+                try:
+                    target_val = float((target.value or "0").replace(",", "."))
+                except ValueError:
+                    validation_fail(page, "Цель должна быть числом", target)
+                    err.value = "Цель должна быть числом"
+                    page.update()
+                    return
+                try:
+                    quota_val = float((quota.value or "1").replace(",", "."))
+                except ValueError:
+                    validation_fail(page, "Квота должна быть числом", quota)
+                    err.value = "Квота должна быть числом"
+                    page.update()
+                    return
                 data = GoalCreate(
                     title=title.value or "",
                     description=description.value or "",
-                    target_value=float((target.value or "0").replace(",", ".")),
+                    target_value=target_val,
                     unit=unit.value or "units",
-                    daily_quota=float((quota.value or "1").replace(",", ".")),
+                    daily_quota=quota_val,
                 )
                 with get_session() as session:
                     goal_service.create_goal(session, data)
         except (ValidationError, ValueError) as exc:
-            err.value = str(exc)
+            msg = ru_validation_message(exc)
+            field = title
+            loc = ""
+            if isinstance(exc, ValidationError) and exc.errors():
+                loc = ".".join(str(x) for x in exc.errors()[0].get("loc", ()))
+            if "estimated" in loc:
+                field = estimate_field
+            elif "target" in loc:
+                field = target
+            elif "quota" in loc or "daily_quota" in loc:
+                field = quota
+            validation_fail(page, msg, field)
+            err.value = msg
             page.update()
             return
-        show_snack(page, "Сохранено")
+        show_toast(page, "Сохранено", kind="success")
         refresh_all()
         on_done()
 
     return ft.Container(
         content=ft.Column(
             [
-                ft.Row(
-                    [
-                        ft.IconButton(
-                            icon=ft.Icons.ARROW_BACK_IOS_NEW,
-                            icon_color=TEXT,
-                            icon_size=18,
-                            on_click=lambda e: on_done(),
-                        ),
-                        ft.Text("Создать", size=22, weight=ft.FontWeight.W_700, color=TEXT),
-                    ]
+                screen_header(
+                    "Создать",
+                    subtitle="Задача или цель · поля проверяются до записи",
+                    leading=ft.IconButton(
+                        icon=ft.Icons.ARROW_BACK_IOS_NEW,
+                        icon_color=TEXT,
+                        icon_size=18,
+                        on_click=lambda e: on_done(),
+                    ),
                 ),
                 ft.Row([task_tab, goal_tab], spacing=10),
                 task_templates_row,
@@ -436,12 +493,12 @@ def build_create_task(page: ft.Page, *, on_done, refresh_all) -> ft.Control:
                     on_click=save,
                     ink=True,
                 ),
-                muted("Форма проверяется через Pydantic перед записью"),
+                muted("Пустое название и неверные числа показываются у поля и в уведомлении"),
             ],
             spacing=14,
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         ),
-        padding=ft.Padding.only(left=16, right=16, top=18, bottom=8),
+        padding=screen_insets(),
         expand=True,
     )

@@ -12,7 +12,15 @@ from app.db import SCHEMA_VERSION, get_db_path, get_session
 from app.schemas import SettingsUpdate
 from app.services import export_service, goal_service, lock_service, settings_service, streak_service
 from app.ui.components.cards import empty_state
-from app.ui.components.dialogs import confirm_delete, show_snack
+from app.ui.components.dialogs import (
+    confirm_delete,
+    ru_validation_message,
+    set_field_error,
+    show_info,
+    show_snack,
+    show_toast,
+    validation_fail,
+)
 from app.ui.screens.onboarding import clear_onboarded, show_onboarding
 from app.ui.theme import (
     ACCENT_PRESETS,
@@ -22,13 +30,16 @@ from app.ui.theme import (
     TEXT,
     apply_accent,
     card_style,
+    group_heading,
     muted,
+    screen_header,
+    screen_insets,
 )
 
 
 APP_VERSION = "1.0"
-# Numbered capabilities in README (Waves A–AS), kept in sync with feature_matrix.
-FEATURE_COUNT = 74
+# Numbered capabilities in README (Waves A–AT), kept in sync with feature_matrix.
+FEATURE_COUNT = 75
 
 
 def _readme_path() -> Path:
@@ -386,6 +397,17 @@ def build_settings(
     )
 
     def save(_):
+        for fld in (
+            name_field,
+            accent_field,
+            work_field,
+            break_field,
+            quiet_start_f,
+            quiet_end_f,
+            wind_down_f,
+            weekly_target_f,
+        ):
+            set_field_error(fld, None)
         try:
             work_min = int(str(work_field.value or "25").strip())
             break_min = int(str(break_field.value or "5").strip())
@@ -394,16 +416,16 @@ def build_settings(
             wd_hour = int(str(wind_down_f.value or "18").strip())
             weekly_tgt = int(str(weekly_target_f.value or "10").strip())
         except ValueError:
-            show_snack(page, "Минуты и часы — целые числа", error=True)
+            validation_fail(page, "Минуты и часы — целые числа", work_field)
             return
         if not (0 <= q_start <= 23 and 0 <= q_end <= 23):
-            show_snack(page, "Тихие часы: час 0–23", error=True)
+            validation_fail(page, "Тихие часы: час 0–23", quiet_start_f)
             return
         if not (0 <= wd_hour <= 23):
-            show_snack(page, "Вечерний режим: час 0–23", error=True)
+            validation_fail(page, "Вечерний режим: час 0–23", wind_down_f)
             return
         if not (1 <= weekly_tgt <= 200):
-            show_snack(page, "Цель недели: 1–200 задач", error=True)
+            validation_fail(page, "Цель недели: 1–200 задач", weekly_target_f)
             return
         try:
             data = SettingsUpdate(
@@ -421,12 +443,12 @@ def build_settings(
                 weekly_task_target=weekly_tgt,
             )
         except ValidationError as exc:
-            show_snack(page, str(exc), error=True)
+            validation_fail(page, ru_validation_message(exc), name_field)
             return
         with get_session() as session:
             updated = settings_service.update_settings(session, data)
         apply_accent(updated.accent_hex, page)
-        show_snack(page, "Настройки сохранены")
+        show_toast(page, "Настройки сохранены", kind="success")
         refresh_all()
 
     def _export_to_data() -> Path:
@@ -769,7 +791,7 @@ def build_settings(
         ("• Долгое нажатие на карточку задачи — закрепить / открепить", "item"),
         ("• Иконка булавки на карточке или в деталях — закрепить", "item"),
         ("• Оранжевая кнопка «+» — создать задачу или цель", "item"),
-        ("• Иконки в шапке Дома — напоминания, поиск, настройки, фокус", "item"),
+                        ("• Чипы на Доме — Брифинг / Итог / Завтра / Фокус; «ещё» — напоминания", "item"),
         ("• «↩ Отменить» после «Готово» — вернуть задачу", "item"),
         ("• «Отменить» в snack после лога прогресса — откат 30 с", "item"),
         ("• На Фокусе: чипы пресетов 15/5 и 50/10", "item"),
@@ -790,18 +812,15 @@ def build_settings(
                 )
             else:
                 rows.append(ft.Text(line, size=12, color=TEXT))
-        page.show_dialog(
-            ft.AlertDialog(
-                title=ft.Text("Горячие клавиши", color=TEXT),
-                content=ft.Container(
-                    content=ft.Column(rows, spacing=6, tight=True, scroll=ft.ScrollMode.AUTO),
-                    width=320,
-                    height=300,
-                ),
-                actions=[
-                    ft.TextButton("Закрыть", on_click=lambda e: page.pop_dialog()),
-                ],
-            )
+        show_info(
+            page,
+            title="Горячие клавиши",
+            content=ft.Container(
+                content=ft.Column(rows, spacing=6, tight=True, scroll=ft.ScrollMode.AUTO),
+                width=320,
+                height=300,
+            ),
+            ok_label="Закрыть",
         )
 
 
@@ -845,27 +864,20 @@ def build_settings(
     return ft.Container(
         content=ft.Column(
             [
-                ft.Row(
-                    [
-                        ft.IconButton(
-                            icon=ft.Icons.ARROW_BACK_IOS_NEW,
-                            icon_color=TEXT,
-                            icon_size=18,
-                            on_click=lambda e: on_back(),
-                        ),
-                        ft.Text(
-                            "Настройки",
-                            size=22,
-                            weight=ft.FontWeight.W_700,
-                            color=TEXT,
-                            expand=True,
-                        ),
-                    ]
+                screen_header(
+                    "Настройки",
+                    subtitle="Профиль, защита и данные",
+                    leading=ft.IconButton(
+                        icon=ft.Icons.ARROW_BACK_IOS_NEW,
+                        icon_color=TEXT,
+                        icon_size=18,
+                        on_click=lambda e: on_back(),
+                    ),
                 ),
-                muted("Профиль и внешний вид"),
                 ft.Container(
                     content=ft.Column(
                         [
+                            group_heading("Профиль и вид"),
                             name_field,
                             muted("Пресеты акцента"),
                             preset_chips,
@@ -875,35 +887,10 @@ def build_settings(
                                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
                             ),
                             week_sw,
-                            archive_recur_sw,
-                            muted(
-                                "Если включено — после спавна следующего повтора "
-                                "родитель уходит в архив."
-                            ),
-                            auto_complete_sw,
-                            muted(
-                                "При включении родительская задача станет «Готово», "
-                                "когда все пункты чек-листа отмечены."
-                            ),
                             compact_sw,
-                            muted(
-                                "Чуть меньше отступы у карточек на Доме "
-                                "(compact_ui=1 в meta)."
-                            ),
-                            muted("Помодоро по умолчанию"),
-                            ft.Row([work_field, break_field], spacing=10),
-                            muted("Тихие часы (баннеры напоминаний на Доме скрыты)"),
-                            ft.Row([quiet_start_f, quiet_end_f], spacing=10),
-                            muted("По умолчанию 22→8. Счётчик просрочек остаётся приглушённым."),
-                            muted("Вечерний режим (мягкая карточка на Доме)"),
-                            ft.Row([wind_down_f], spacing=10),
-                            muted("С этого часа — «Вечерний режим» и ссылка на итог дня. По умолчанию 18."),
-                            muted("Недельная цель (прогресс на Доме и в Аналитике)"),
-                            ft.Row([weekly_target_f], spacing=10),
-                            muted("Сколько задач закрыть за ISO-неделю (пн–вс). По умолчанию 10."),
-                            muted("Акцент применяется сразу — перезапуск не нужен."),
+                            muted("Акцент применяется сразу. Компактный режим — меньше отступы."),
                         ],
-                        spacing=14,
+                        spacing=12,
                     ),
                     padding=16,
                     **card_style(),
@@ -911,20 +898,42 @@ def build_settings(
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Text(
-                                "Защита",
-                                size=15,
-                                weight=ft.FontWeight.W_700,
-                                color=TEXT,
-                            ),
-                            muted(
-                                "PIN хранится только как солёный хеш (PBKDF2-HMAC-SHA256). "
-                                "После 5 неверных попыток — пауза 30 с."
-                            ),
+                            group_heading("Задачи"),
+                            archive_recur_sw,
+                            muted("После спавна следующего повтора родитель уходит в архив."),
+                            auto_complete_sw,
+                            muted("Родитель станет «Готово», когда все пункты отмечены."),
+                        ],
+                        spacing=10,
+                    ),
+                    padding=16,
+                    **card_style(),
+                ),
+                ft.Container(
+                    content=ft.Column(
+                        [
+                            group_heading("Время и неделя"),
+                            muted("Помодоро по умолчанию"),
+                            ft.Row([work_field, break_field], spacing=10),
+                            muted("Тихие часы — баннеры на Доме скрыты (по умолчанию 22→8)."),
+                            ft.Row([quiet_start_f, quiet_end_f], spacing=10),
+                            muted("Вечерний режим (карточка на Доме, с часа)."),
+                            ft.Row([wind_down_f], spacing=10),
+                            muted("Недельная цель задач (пн–вс)."),
+                            ft.Row([weekly_target_f], spacing=10),
+                        ],
+                        spacing=10,
+                    ),
+                    padding=16,
+                    **card_style(),
+                ),
+                ft.Container(
+                    content=ft.Column(
+                        [
+                            group_heading("Защита"),
+                            muted("PIN — солёный хеш. 5 ошибок → пауза 30 с."),
                             lock_sw,
-                            muted(
-                                "На следующем запуске потребуется PIN, если блокировка включена."
-                            ),
+                            muted("При включении PIN спрашивается при запуске."),
                             change_pin_btn,
                             bio_sw,
                             muted(
@@ -941,17 +950,10 @@ def build_settings(
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Text(
-                                "Заморозка серии",
-                                size=15,
-                                weight=ft.FontWeight.W_700,
-                                color=TEXT,
-                            ),
+                            group_heading("Заморозка серии"),
                             muted(
-                                "Раз в ISO-неделю (пн–вс) можно защитить текущую серию: "
-                                "один пропущенный день квоты не обнуляет streak. "
-                                "Рекорд (best) считает только реальные дни. "
-                                "Ключ meta: streak_freeze_used_week."
+                                "Раз в неделю один пропуск квоты не рвёт текущую серию "
+                                "(meta: streak_freeze_used_week)."
                             ),
                             freeze_status,
                             freeze_btn,
@@ -964,12 +966,7 @@ def build_settings(
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Text(
-                                "Резервная копия",
-                                size=15,
-                                weight=ft.FontWeight.W_700,
-                                color=TEXT,
-                            ),
+                            group_heading("Резервная копия"),
                             muted(
                                 "Экспорт и импорт JSON. FilePicker при доступности; "
                                 "иначе путь в data/."
@@ -1067,12 +1064,7 @@ def build_settings(
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Text(
-                                "Архив целей",
-                                size=15,
-                                weight=ft.FontWeight.W_700,
-                                color=TEXT,
-                            ),
+                            group_heading("Архив целей"),
                             muted("Скрыты с Дома и квот — можно восстановить"),
                             archived_host,
                         ],
@@ -1084,12 +1076,7 @@ def build_settings(
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Text(
-                                "Онбординг",
-                                size=15,
-                                weight=ft.FontWeight.W_700,
-                                color=TEXT,
-                            ),
+                            group_heading("Онбординг"),
                             muted("Сбросить флаг и показать 3 карточки"),
                             ft.Container(
                                 content=ft.Row(
@@ -1125,12 +1112,7 @@ def build_settings(
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Text(
-                                "Dev / сброс",
-                                size=15,
-                                weight=ft.FontWeight.W_700,
-                                color=TEXT,
-                            ),
+                            group_heading("Dev / сброс"),
                             muted(
                                 "Для тестов: сброс celebration-флагов целей "
                                 "(celebrated_goal_*)"
@@ -1169,12 +1151,7 @@ def build_settings(
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Text(
-                                "Горячие клавиши",
-                                size=15,
-                                weight=ft.FontWeight.W_700,
-                                color=TEXT,
-                            ),
+                            group_heading("Горячие клавиши"),
                             muted("Жесты и действия интерфейса (RU)"),
                             ft.Container(
                                 content=ft.Row(
@@ -1210,12 +1187,7 @@ def build_settings(
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Text(
-                                "О приложении",
-                                size=15,
-                                weight=ft.FontWeight.W_700,
-                                color=TEXT,
-                            ),
+                            group_heading("О приложении"),
                             ft.Text(
                                 f"TaskTimer {APP_VERSION} schema {SCHEMA_VERSION}",
                                 size=14,
@@ -1223,7 +1195,7 @@ def build_settings(
                                 color=TEXT,
                             ),
                             muted(
-                                f"{FEATURE_COUNT} фичи · волны A–AS · "
+                                f"{FEATURE_COUNT} фичи · волны A–AT · "
                                 f"схема SQLite {SCHEMA_VERSION}"
                             ),
                             muted(
@@ -1278,6 +1250,6 @@ def build_settings(
             scroll=ft.ScrollMode.AUTO,
             expand=True,
         ),
-        padding=ft.Padding.only(left=16, right=16, top=18, bottom=8),
+        padding=screen_insets(),
         expand=True,
     )
