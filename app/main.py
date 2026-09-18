@@ -30,6 +30,8 @@ from app.ui.screens.splash import build_splash
 from app.ui.screens.task_detail import build_task_detail
 from app.ui.screens.onboarding import maybe_show_onboarding
 from app.ui.screens.tasks import build_tasks
+from app.ui.haptics import attach as attach_haptics, haptic
+from app.ui.motion import make_switcher
 from app.ui.theme import ASSETS_DIR, BG, BG_ELEVATED, BORDER, PHONE_H, PHONE_W, apply_accent, apply_theme, is_mobile_layout
 
 
@@ -190,6 +192,7 @@ def main(page: ft.Page) -> None:
         accent = settings_service.get_settings(session).accent_hex
     apply_accent(accent)
     apply_theme(page, accent=accent)
+    attach_haptics(page)
     try:
         lock_service.set_runtime_platform(getattr(page, "platform", None))
     except Exception:
@@ -216,7 +219,7 @@ def main(page: ft.Page) -> None:
     with get_session() as session:
         if lock_service.should_gate_main(session):
             state["screen"] = "lock"
-    content = ft.Container(expand=True)
+    content = make_switcher(ft.Container(expand=True))
     nav_host = ft.Container()
 
     def go_create():
@@ -361,6 +364,7 @@ def main(page: ft.Page) -> None:
         state["note_filename"] = None
         state["note_title"] = None
         state["tasks_filter"] = None
+        haptic(page, "selection")
         render()
 
     def render():
@@ -612,6 +616,7 @@ def main(page: ft.Page) -> None:
                 state["note_filename"] = None
                 state["note_title"] = None
                 state["tasks_filter"] = None
+                haptic(page, "selection")
                 render()
                 return
             if space_opens_focus(key, screen_now):

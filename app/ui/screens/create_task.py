@@ -14,6 +14,7 @@ from app.ui.components.dialogs import (
     show_toast,
     validation_fail,
 )
+from app.ui.haptics import haptic
 from app.ui.theme import BORDER, MUTED, ORANGE, TEXT, card_style, muted, screen_header, screen_insets
 
 # Prefill chips for task mode (priority / recur)
@@ -440,6 +441,7 @@ def build_create_task(page: ft.Page, *, on_done, refresh_all) -> ft.Control:
             err.value = msg
             page.update()
             return
+        haptic(page, "success")
         show_toast(page, "Сохранено", kind="success")
         refresh_all()
         on_done()

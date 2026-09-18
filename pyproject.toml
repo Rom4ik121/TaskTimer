@@ -57,6 +57,9 @@ export_method = "debugging"
 [tool.flet.ios.info]
 NSFaceIDUsageDescription = "TaskTimer использует Face ID для быстрой разблокировки приложения."
 
+[tool.flet.android.permission]
+"android.permission.VIBRATE" = true
+
 [tool.flet.ios.splash]
 color = "#0F0F12"
 dark_color = "#0F0F12"

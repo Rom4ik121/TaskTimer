@@ -7,6 +7,7 @@ from app.db import get_session
 from app.services import lock_service
 from app.ui.components.dialogs import show_snack
 from app.ui.components.pin_pad import build_number_pad, build_pin_dots
+from app.ui.haptics import haptic
 from app.ui.theme import BG, MUTED, ORANGE, RED, TEXT, icon_src
 
 
@@ -63,6 +64,7 @@ def build_lock_screen(page: ft.Page, *, on_unlock, on_bind_keys=None) -> ft.Cont
         if result.ok:
             state["pin"] = ""
             state["error"] = False
+            haptic(page, "success")
             on_unlock()
             return
         state["pin"] = ""
@@ -84,6 +86,7 @@ def build_lock_screen(page: ft.Page, *, on_unlock, on_bind_keys=None) -> ft.Cont
             return
         state["error"] = False
         state["pin"] += d
+        haptic(page, "light")
         paint()
         if len(state["pin"]) == lock_service.PIN_LENGTH:
             submit(state["pin"])

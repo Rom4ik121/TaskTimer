@@ -7,6 +7,7 @@ from pydantic import ValidationError
 from app.schemas import NoteWrite
 from app.services import notes_service
 from app.ui.components.dialogs import ru_validation_message, show_toast, validation_fail
+from app.ui.haptics import haptic
 from app.ui.theme import BG, BORDER, CARD, MUTED, ORANGE, TEXT, muted
 
 
@@ -81,6 +82,7 @@ def build_note_editor(
             return
         notes_service.write_note(data.filename, data.content)
         state["dirty"] = False
+        haptic(page, "success")
         show_toast(page, "Сохранено", kind="success")
         # Local paint only — avoid full-app remount that would drop edit mode.
         paint()

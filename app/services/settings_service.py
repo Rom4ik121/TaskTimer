@@ -61,6 +61,12 @@ def get_settings(session: Session) -> SettingsOut:
         if compact_raw is None
         else str(compact_raw).strip().lower() in ("1", "true", "yes", "on")
     )
+    haptics_raw = get_meta(session, "haptics_enabled")
+    haptics_enabled = (
+        True
+        if haptics_raw is None
+        else str(haptics_raw).strip().lower() in ("1", "true", "yes", "on")
+    )
     wind_down = _parse_int(
         get_meta(session, "wind_down_hour"),
         DEFAULTS.wind_down_hour,
@@ -84,6 +90,7 @@ def get_settings(session: Session) -> SettingsOut:
         quiet_end=quiet_end,
         auto_complete_subtasks=auto_complete,
         compact_ui=compact_ui,
+        haptics_enabled=haptics_enabled,
         wind_down_hour=wind_down,
         weekly_task_target=weekly_target,
     )
@@ -126,6 +133,12 @@ def update_settings(session: Session, data: SettingsUpdate) -> SettingsOut:
             session,
             "compact_ui",
             "1" if payload["compact_ui"] else "0",
+        )
+    if "haptics_enabled" in payload and payload["haptics_enabled"] is not None:
+        set_meta(
+            session,
+            "haptics_enabled",
+            "1" if payload["haptics_enabled"] else "0",
         )
     if "wind_down_hour" in payload and payload["wind_down_hour"] is not None:
         set_meta(session, "wind_down_hour", str(int(payload["wind_down_hour"])))

@@ -32,6 +32,7 @@ from app.ui.components.dialogs import (
     validation_fail,
 )
 from app.ui.components.progress_ring import mini_ring
+from app.ui.haptics import haptic
 from app.ui.screens.onboarding import maybe_show_onboarding
 from app.ui.theme import (
     BORDER,
@@ -634,6 +635,7 @@ def build_home(
         def toggle_pin(tid: int, pinned: bool):
             with get_session() as session:
                 task_service.set_pinned(session, tid, pinned)
+            haptic(page, "light")
             reload()
 
         def cycle(tid: int):
@@ -644,6 +646,7 @@ def build_home(
                     return
                 nxt = order[(order.index(t.status) + 1) % len(order)] if t.status in order else "todo"
                 task_service.set_status(session, tid, nxt)
+            haptic(page, "medium" if nxt == "done" else "selection")
             reload()
             page.update()
 

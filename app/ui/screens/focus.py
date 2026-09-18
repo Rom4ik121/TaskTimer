@@ -10,6 +10,8 @@ from app.schemas import SettingsUpdate, TimeSessionCreate, TimeSessionUpdate
 from app.services import analytics_service, settings_service, task_service, timer_service
 from app.ui.components.dialogs import show_snack
 from app.ui.components.cards import empty_state
+from app.ui.components.filter_sheet import FilterSection, show_filter_sheet
+from app.ui.haptics import haptic
 from app.ui.theme import BORDER, GREEN, MUTED, ORANGE, TEXT, card_style, muted
 
 
@@ -56,6 +58,7 @@ def build_focus(page: ft.Page, *, on_back, refresh_all, on_open_note=None) -> ft
                         if ts and ts.status == "done":
                             note = (state.get("note") or "").strip()
                             timer_service.complete(session, ts.id, note=note)
+                            haptic(page, "success")
                             show_snack(page, "Сессия завершена" + (f" · {note[:40]}" if note else ""))
                         reload()
                         return
@@ -167,10 +170,7 @@ def build_focus(page: ft.Page, *, on_back, refresh_all, on_open_note=None) -> ft
             note = (state.get("note") or "").strip()
             with get_session() as session:
                 timer_service.complete(session, sid, note=note)
-            stop_ticker()
-            state["sid"] = None
-            state["note"] = ""
-            state["note_sid"] = None
+            haptic(page, "success")
             show_snack(page, "Сессия сохранена" + (f" · заметка" if note else ""))
             reload()
 
@@ -388,6 +388,63 @@ def build_focus(page: ft.Page, *, on_back, refresh_all, on_open_note=None) -> ft
             spacing=8,
         )
 
+        def open_hist_filters(_e=None):
+            haptic(page, "light")
+            current = state.get("hist_filter") or "all"
+            sections = [
+                FilterSection(
+                    "hist",
+                    "История",
+                    [("Все", "all"), ("С заметкой", "noted")],
+                    current,
+                )
+            ]
+
+            def apply(vals: dict):
+                state["hist_filter"] = vals.get("hist") or "all"
+                haptic(page, "selection")
+                reload()
+
+            show_filter_sheet(
+                page,
+                title="Фильтры",
+                sections=sections,
+                on_apply=apply,
+                reset_values={"hist": "all"},
+            )
+
+        noted_on = (state.get("hist_filter") or "all") == "noted"
+        hist_summary = "С заметкой" if noted_on else ""
+        funnel = getattr(ft.Icons, "FILTER_ALT", None) or ft.Icons.FILTER_LIST
+        hist_header = ft.Row(
+            [
+                ft.Text("История · 20", size=16, weight=ft.FontWeight.W_600, color=TEXT, expand=True),
+                ft.Container(
+                    content=ft.Row(
+                        [
+                            ft.Icon(funnel, size=16, color=ORANGE if noted_on else TEXT),
+                            ft.Text(
+                                hist_summary or "Фильтры",
+                                size=12,
+                                color=ORANGE if noted_on else MUTED,
+                                weight=ft.FontWeight.W_500,
+                            ),
+                        ],
+                        spacing=6,
+                        tight=True,
+                    ),
+                    padding=ft.Padding.symmetric(horizontal=10, vertical=6),
+                    border=ft.Border.all(1, ORANGE if noted_on else BORDER),
+                    border_radius=ft.BorderRadius.all(14),
+                    on_click=open_hist_filters,
+                    ink=True,
+                    tooltip="Фильтры истории",
+                ),
+            ],
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        )
+        _ = hist_chips
+
         hist_items = []
         status_ru_map = {"running": "Идёт", "paused": "Пауза", "done": "Готово"}
         for h in history:
@@ -508,8 +565,7 @@ def build_focus(page: ft.Page, *, on_back, refresh_all, on_open_note=None) -> ft
                 note_field,
                 muted("Пресеты"),
                 presets,
-                ft.Text("История · 20", size=16, weight=ft.FontWeight.W_600, color=TEXT),
-                hist_chips,
+                hist_header,
                 *(
                     hist_items
                     or [

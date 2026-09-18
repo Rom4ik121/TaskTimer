@@ -35,6 +35,7 @@ DEFAULT_SETTINGS = {
     "quiet_end": "8",
     "auto_complete_subtasks": "0",
     "compact_ui": "0",
+    "haptics_enabled": "1",
     "wind_down_hour": "18",
     "weekly_task_target": "10",
 }

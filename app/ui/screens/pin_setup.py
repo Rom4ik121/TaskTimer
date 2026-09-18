@@ -7,6 +7,7 @@ from app.db import get_session
 from app.services import lock_service
 from app.ui.components.dialogs import show_toast
 from app.ui.components.pin_pad import build_number_pad, build_pin_dots
+from app.ui.haptics import haptic
 from app.ui.theme import BG, BORDER, CARD, MUTED, ORANGE, RED, TEXT
 
 
@@ -140,6 +141,7 @@ def build_pin_setup(
                 lock_service.change_pin(session, pin)
             else:
                 lock_service.setup_pin(session, pin, biometrics=bio)
+        haptic(page, "success")
         on_done()
 
     def _accept_code(code: str) -> None:
@@ -160,6 +162,7 @@ def build_pin_setup(
             show_toast(page, "PIN не совпадает — введите заново", kind="error")
             return
         if is_change:
+            haptic(page, "success")
             _finish(False)
             return
         state["pin"] = ""
@@ -174,6 +177,7 @@ def build_pin_setup(
             return
         state["error"] = False
         state["pin"] += d
+        haptic(page, "light")
         paint()
         if len(state["pin"]) == lock_service.PIN_LENGTH:
             _accept_code(state["pin"])

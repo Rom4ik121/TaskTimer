@@ -251,6 +251,7 @@ class SettingsOut(BaseModel):
     quiet_end: int = Field(default=8, ge=0, le=23)
     auto_complete_subtasks: bool = False
     compact_ui: bool = False
+    haptics_enabled: bool = True
     wind_down_hour: int = Field(default=18, ge=0, le=23)
     weekly_task_target: int = Field(default=10, ge=1, le=200)
 
@@ -266,6 +267,7 @@ class SettingsUpdate(BaseModel):
     quiet_end: Optional[int] = Field(default=None, ge=0, le=23)
     auto_complete_subtasks: Optional[bool] = None
     compact_ui: Optional[bool] = None
+    haptics_enabled: Optional[bool] = None
     wind_down_hour: Optional[int] = Field(default=None, ge=0, le=23)
     weekly_task_target: Optional[int] = Field(default=None, ge=1, le=200)
 

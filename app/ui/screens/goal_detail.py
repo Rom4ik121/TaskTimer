@@ -9,6 +9,7 @@ from app.schemas import GoalUpdate, ProgressLogCreate, ProgressLogUpdate
 from app.services import goal_service, streak_service
 from app.ui.components.cards import empty_state
 from app.ui.components.dialogs import confirm_delete, show_snack
+from app.ui.haptics import haptic
 from app.ui.components.progress_ring import donut_progress
 from app.ui.theme import BORDER, GREEN, MUTED, ORANGE, RED, TEXT, card_style, markdown_lite, muted, section_title
 
@@ -125,6 +126,7 @@ def build_goal_detail(
                 return
             with get_session() as session:
                 goal_service.update_goal(session, goal_id, data)
+            haptic(page, "success")
             show_snack(page, "Цель сохранена")
             refresh_all()
             reload()

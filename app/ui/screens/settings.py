@@ -21,6 +21,7 @@ from app.ui.components.dialogs import (
     show_toast,
     validation_fail,
 )
+from app.ui.haptics import haptic, set_enabled
 from app.ui.screens.onboarding import clear_onboarded, show_onboarding
 from app.ui.theme import (
     ACCENT_PRESETS,
@@ -38,8 +39,8 @@ from app.ui.theme import (
 
 
 APP_VERSION = "1.0"
-# Numbered capabilities in README (Waves A–AT), kept in sync with feature_matrix.
-FEATURE_COUNT = 75
+# Numbered capabilities in README (Waves A–AU), kept in sync with feature_matrix.
+FEATURE_COUNT = 76
 
 
 def _readme_path() -> Path:
@@ -97,6 +98,11 @@ def build_settings(
     compact_sw = ft.Switch(
         label="Компактный режим",
         value=bool(getattr(s, "compact_ui", False)),
+        active_color=ORANGE,
+    )
+    haptics_sw = ft.Switch(
+        label="Тактильность",
+        value=bool(getattr(s, "haptics_enabled", True)),
         active_color=ORANGE,
     )
     lock_sw = ft.Switch(
@@ -437,6 +443,7 @@ def build_settings(
                 archive_on_recur_done=bool(archive_recur_sw.value),
                 auto_complete_subtasks=bool(auto_complete_sw.value),
                 compact_ui=bool(compact_sw.value),
+                haptics_enabled=bool(haptics_sw.value),
                 quiet_start=q_start,
                 quiet_end=q_end,
                 wind_down_hour=wd_hour,
@@ -447,7 +454,9 @@ def build_settings(
             return
         with get_session() as session:
             updated = settings_service.update_settings(session, data)
+        set_enabled(bool(updated.haptics_enabled))
         apply_accent(updated.accent_hex, page)
+        haptic(page, "success")
         show_toast(page, "Настройки сохранены", kind="success")
         refresh_all()
 
@@ -888,7 +897,11 @@ def build_settings(
                             ),
                             week_sw,
                             compact_sw,
-                            muted("Акцент применяется сразу. Компактный режим — меньше отступы."),
+                            haptics_sw,
+                            muted(
+                                "Акцент применяется сразу. Компактный режим — меньше отступы. "
+                                "Тактильность — вибрация на телефоне и лёгкий отклик на desktop."
+                            ),
                         ],
                         spacing=12,
                     ),
@@ -1195,7 +1208,7 @@ def build_settings(
                                 color=TEXT,
                             ),
                             muted(
-                                f"{FEATURE_COUNT} фичи · волны A–AT · "
+                                f"{FEATURE_COUNT} фичи · волны A–AU · "
                                 f"схема SQLite {SCHEMA_VERSION}"
                             ),
                             muted(

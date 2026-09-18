@@ -11,6 +11,7 @@ from app.schemas import SubtaskCreate, SubtaskUpdate, TaskUpdate
 from app.services import goal_service, subtask_service, task_service
 from app.ui.components.dialogs import confirm_delete, pick_date, show_snack
 from app.ui.components.cards import empty_illus
+from app.ui.haptics import haptic
 from app.ui.theme import BORDER, GREEN, MUTED, ORANGE, RED, TEXT, card_style, markdown_lite, muted
 
 
@@ -372,6 +373,7 @@ def build_task_detail(
             err.value = str(exc)
             page.update()
             return
+        haptic(page, "success")
         show_snack(page, "Сохранено")
         refresh_all()
         page.update()
@@ -391,6 +393,7 @@ def build_task_detail(
         pin_btn.icon = ft.Icons.PUSH_PIN if new_val else ft.Icons.PUSH_PIN_OUTLINED
         pin_btn.icon_color = ORANGE if new_val else MUTED
         pin_btn.tooltip = "Открепить" if new_val else "Закрепить"
+        haptic(page, "light")
         show_snack(page, "Закреплено" if new_val else "Откреплено")
         refresh_all()
         page.update()

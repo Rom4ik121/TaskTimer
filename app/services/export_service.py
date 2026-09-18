@@ -489,6 +489,8 @@ def _apply_settings(session: Session, settings: dict | None) -> None:
         payload["auto_complete_subtasks"] = bool(settings["auto_complete_subtasks"])
     if "compact_ui" in settings and settings["compact_ui"] is not None:
         payload["compact_ui"] = bool(settings["compact_ui"])
+    if "haptics_enabled" in settings and settings["haptics_enabled"] is not None:
+        payload["haptics_enabled"] = bool(settings["haptics_enabled"])
     if "wind_down_hour" in settings and settings["wind_down_hour"] is not None:
         try:
             payload["wind_down_hour"] = int(settings["wind_down_hour"])

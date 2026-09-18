@@ -6,6 +6,8 @@ from typing import Literal
 import flet as ft
 from pydantic import ValidationError
 
+from app.ui.motion import DURATION_FAST, anim
+from app.ui.haptics import haptic
 from app.ui.theme import BORDER, GREEN, ORANGE, RED, TEXT
 
 
@@ -73,12 +75,21 @@ def show_toast(
         "action": action,
         "duration": ft.Duration(milliseconds=int(ms)),
     }
+    body = ft.Container(
+        content=ft.Text(message, color=fg),
+        opacity=0.0,
+        animate_opacity=anim(DURATION_FAST),
+    )
     page.show_dialog(
         ft.SnackBar(
-            ft.Text(message, color=fg),
+            body,
             **kwargs,
         )
     )
+    try:
+        body.opacity = 1.0
+    except Exception:
+        pass
 
 
 def show_snack(
@@ -140,6 +151,7 @@ def confirm_action(
 
     def _yes(_):
         page.pop_dialog()
+        haptic(page, "heavy" if danger else "medium")
         on_confirm()
 
     confirm_color = RED if danger else ORANGE

@@ -5,6 +5,7 @@ import asyncio
 
 import flet as ft
 
+from app.ui.motion import splash_fade
 from app.ui.theme import BG, MUTED, ORANGE, TEXT, icon_src
 
 
@@ -45,7 +46,7 @@ def build_splash(
         height=96,
         fit=ft.BoxFit.CONTAIN,
     )
-    return ft.Container(
+    root = ft.Container(
         content=ft.Column(
             [
                 ft.Container(expand=True),
@@ -83,3 +84,4 @@ def build_splash(
         on_click=finish if skippable else None,
         ink=False,
     )
+    return splash_fade(root, page)

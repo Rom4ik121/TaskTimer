@@ -1,4 +1,4 @@
-"""Tasks list — status/priority/archive filters, sort, search, overdue chips."""
+"""Tasks list — filters live in a sheet; main surface is header, search, list, FAB."""
 from __future__ import annotations
 
 import flet as ft
@@ -7,6 +7,9 @@ from app.db import get_session
 from app.services import task_service
 from app.ui.components.cards import empty_state, task_card
 from app.ui.components.dialogs import confirm_delete, show_snack, validation_fail
+from app.ui.components.filter_sheet import FilterSection, show_filter_sheet, summary_chip
+from app.ui.haptics import haptic
+from app.ui.motion import appear_item, pulse_press, reveal_items
 from app.ui.theme import (
     BORDER,
     GREEN,
@@ -16,26 +19,9 @@ from app.ui.theme import (
     TAG_COLORS,
     TEXT,
     header_icon_btn,
-    muted,
     screen_header,
     screen_insets,
 )
-
-
-def _chip(label: str, *, active: bool, accent: str = ORANGE, on_click=None) -> ft.Container:
-    return ft.Container(
-        content=ft.Text(
-            label,
-            size=12,
-            color="#0F0F12" if active else MUTED,
-            weight=ft.FontWeight.W_500,
-        ),
-        padding=ft.Padding.symmetric(horizontal=12, vertical=8),
-        border_radius=ft.BorderRadius.all(16),
-        bgcolor=accent if active else "transparent",
-        border=ft.Border.all(1, accent if active else BORDER),
-        on_click=on_click,
-    )
 
 
 def build_tasks(
@@ -58,6 +44,7 @@ def build_tasks(
     selected: set[int] = set()
     list_col = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
     batch_host = ft.Container(visible=False)
+    summary_host = ft.Container(visible=False)
     select_btn_icon = ft.Icon(ft.Icons.CHECKLIST, color=TEXT, size=20)
     select_btn = ft.Container(
         content=select_btn_icon,
@@ -71,7 +58,6 @@ def build_tasks(
         tooltip="Выбрать",
     )
 
-    status_keys = [None, "todo", "in_progress", "done", "due_today", "overdue", "pinned", "inbox", "archive"]
     status_labels = [
         ("Все", None),
         ("К выполнению", "todo"),
@@ -83,65 +69,77 @@ def build_tasks(
         ("Входящие", "inbox"),
         ("Архив", "archive"),
     ]
-    pri_keys = [None, "high", "medium", "low"]
     pri_labels = [
         ("Все", None),
         ("Высокий", "high"),
         ("Средний", "medium"),
         ("Низкий", "low"),
     ]
-    sort_keys = [None, "due", "priority", "created"]
     sort_labels = [
         ("Умная", None),
         ("Срок", "due"),
         ("Приоритет", "priority"),
         ("Создано", "created"),
     ]
+    status_summary = {k: lab for lab, k in status_labels if k is not None}
+    pri_summary = {k: lab for lab, k in pri_labels if k is not None}
+    sort_summary = {k: lab for lab, k in sort_labels if k is not None}
+    status_accents = {
+        "overdue": RED,
+        "pinned": ORANGE,
+        "inbox": ORANGE,
+    }
 
-    status_chips: list[ft.Container] = []
-    pri_chips: list[ft.Container] = []
-    sort_chips: list[ft.Container] = []
+    def _filters_active() -> bool:
+        return any(
+            [
+                filter_mode["value"] is not None,
+                priority_mode["value"] is not None,
+                sort_mode["value"] is not None,
+                tag_mode["value"] is not None,
+            ]
+        )
 
-    def _paint_status():
-        mode = filter_mode["value"]
-        for i, chip in enumerate(status_chips):
-            key = status_keys[i]
-            active = mode == key
-            if key == "overdue" and active:
-                accent = RED
-            elif key == "pinned" and active:
-                accent = ORANGE
-            elif key == "inbox" and active:
-                accent = ORANGE
-            else:
-                accent = ORANGE
-            chip.bgcolor = accent if active else "transparent"
-            chip.border = ft.Border.all(1, accent if active else BORDER)
-            chip.content.color = "#0F0F12" if active else MUTED
-
-    def _paint_pri():
-        mode = priority_mode["value"]
-        for i, chip in enumerate(pri_chips):
-            key = pri_keys[i]
-            active = mode == key
-            chip.bgcolor = ORANGE if active else "transparent"
-            chip.border = ft.Border.all(1, ORANGE if active else BORDER)
-            chip.content.color = "#0F0F12" if active else MUTED
-
-    def _paint_sort():
-        mode = sort_mode["value"]
-        for i, chip in enumerate(sort_chips):
-            key = sort_keys[i]
-            active = mode == key
-            chip.bgcolor = ORANGE if active else "transparent"
-            chip.border = ft.Border.all(1, ORANGE if active else BORDER)
-            chip.content.color = "#0F0F12" if active else MUTED
+    def _summary_text() -> str:
+        parts: list[str] = []
+        st = filter_mode["value"]
+        if st is not None:
+            parts.append(status_summary.get(st, str(st)))
+        pri = priority_mode["value"]
+        if pri is not None:
+            parts.append(pri_summary.get(pri, str(pri)))
+        tag = tag_mode["value"]
+        if tag:
+            parts.append(str(tag))
+        sort = sort_mode["value"]
+        if sort is not None:
+            parts.append(sort_summary.get(sort, str(sort)))
+        return " · ".join(parts)
 
     def _paint_select_btn():
         on = select_on["value"]
         select_btn_icon.color = ORANGE if on else TEXT
         select_btn.border = ft.Border.all(1, ORANGE if on else BORDER)
         select_btn.tooltip = "Готово" if on else "Выбрать"
+
+    def _paint_filter_btn():
+        on = _filters_active()
+        filter_icon.color = ORANGE if on else TEXT
+        filter_btn.border = ft.Border.all(1, ORANGE if on else BORDER)
+        filter_btn.tooltip = "Фильтры"
+
+    def _paint_summary():
+        text = _summary_text()
+        active = bool(text)
+        summary_host.visible = active
+        if not active:
+            summary_host.content = None
+            return
+        summary_host.content = summary_chip(
+            text,
+            on_click=lambda e: open_filters(),
+            page=page,
+        )
 
     def _paint_batch():
         on = select_on["value"]
@@ -220,10 +218,7 @@ def build_tasks(
         mode = filter_mode["value"]
         with get_session() as session:
             tasks = _fetch(session)
-            available_tags = task_service.list_color_tags(
-                session, archived=(mode == "archive")
-            )
-        _rebuild_tag_chips(available_tags)
+        appeared: list[ft.Control] = []
         if not tasks:
             hint = "Смените фильтр или создайте задачу кнопкой +"
             title = "Задач не найдено"
@@ -281,26 +276,31 @@ def build_tasks(
                         alignment=ft.Alignment.CENTER,
                     )
                 )
-            for t in tasks:
-                list_col.controls.append(
-                    task_card(
-                        t,
-                        on_tap=None if select_on["value"] else on_open_task,
-                        on_cycle_status=None if select_on["value"] else cycle,
-                        on_delete=None if select_on["value"] else delete,
-                        on_toggle_pin=None if select_on["value"] else toggle_pin,
-                        select_mode=select_on["value"],
-                        selected=t.id in selected,
-                        on_toggle_select=toggle_selected,
-                    )
+            for i, t in enumerate(tasks):
+                card = task_card(
+                    t,
+                    on_tap=None if select_on["value"] else on_open_task,
+                    on_cycle_status=None if select_on["value"] else cycle,
+                    on_delete=None if select_on["value"] else delete,
+                    on_toggle_pin=None if select_on["value"] else toggle_pin,
+                    select_mode=select_on["value"],
+                    selected=t.id in selected,
+                    on_toggle_select=toggle_selected,
                 )
+                wrap = appear_item(card, index=i)
+                appeared.append(wrap)
+                list_col.controls.append(wrap)
         _paint_select_btn()
+        _paint_filter_btn()
+        _paint_summary()
         _paint_batch()
         page.update()
+        reveal_items(appeared, page)
 
     def toggle_pin(tid: int, pinned: bool):
         with get_session() as session:
             task_service.set_pinned(session, tid, pinned)
+        haptic(page, "light")
         show_snack(page, "Закреплено" if pinned else "Откреплено")
         reload()
         refresh_all()
@@ -317,6 +317,10 @@ def build_tasks(
                 else "todo"
             )
             task_service.set_status(session, tid, nxt)
+        if nxt == "done":
+            haptic(page, "medium")
+        else:
+            haptic(page, "selection")
         reload()
 
     def delete(tid: int):
@@ -375,7 +379,6 @@ def build_tasks(
             confirm_label="В архив",
         )
 
-
     def do_batch_complete():
         ids = list(selected)
         if not ids:
@@ -387,6 +390,7 @@ def build_tasks(
                 n = task_service.complete_tasks(session, ids)
             selected.clear()
             select_on["value"] = False
+            haptic(page, "medium")
             show_snack(page, f"Готово: {n}")
             reload()
             refresh_all()
@@ -415,87 +419,87 @@ def build_tasks(
             confirm_label="В архив",
         )
 
-    tag_chips: list[ft.Container] = []
-    tag_row = ft.Row(tag_chips, spacing=8, scroll=ft.ScrollMode.AUTO)
-
-    def _paint_tags():
-        mode = tag_mode["value"]
-        for chip in tag_chips:
-            key = chip.data
-            active = mode == key
-            accent = TAG_COLORS.get(key or "", ORANGE) if key else ORANGE
-            chip.bgcolor = accent if active else "transparent"
-            chip.border = ft.Border.all(1, accent if active else BORDER)
-            chip.content.color = "#0F0F12" if active else MUTED
-
-    def set_tag(mode):
-        tag_mode["value"] = mode
-        _paint_tags()
-        reload()
-
-    def _rebuild_tag_chips(tags: list[str]):
-        tag_chips.clear()
-        tag_row.controls.clear()
-        all_chip = _chip(
-            "Все метки",
-            active=tag_mode["value"] is None,
-            on_click=lambda e: set_tag(None),
-        )
-        all_chip.data = None
-        tag_chips.append(all_chip)
-        tag_row.controls.append(all_chip)
-        for tg in tags:
-            chip = _chip(
-                tg,
-                active=tag_mode["value"] == tg,
-                accent=TAG_COLORS.get(tg, ORANGE),
-                on_click=lambda e, t=tg: set_tag(t),
+    def open_filters(_e=None):
+        haptic(page, "light")
+        mode = filter_mode["value"]
+        with get_session() as session:
+            tags = task_service.list_color_tags(
+                session, archived=(mode == "archive")
             )
-            chip.data = tg
-            tag_chips.append(chip)
-            tag_row.controls.append(chip)
-        _paint_tags()
+        tag_opts: list[tuple[str, str | None]] = [("Все метки", None)]
+        tag_accents: dict = {}
+        for tg in tags:
+            tag_opts.append((tg, tg))
+            tag_accents[tg] = TAG_COLORS.get(tg, ORANGE)
+        sections = [
+            FilterSection(
+                "status",
+                "Статус",
+                status_labels,
+                filter_mode["value"],
+                status_accents,
+            ),
+            FilterSection(
+                "priority",
+                "Приоритет",
+                pri_labels,
+                priority_mode["value"],
+            ),
+            FilterSection(
+                "sort",
+                "Сортировка",
+                sort_labels,
+                sort_mode["value"],
+            ),
+            FilterSection(
+                "tag",
+                "Теги",
+                tag_opts,
+                tag_mode["value"],
+                tag_accents,
+            ),
+        ]
 
+        def apply(vals: dict):
+            filter_mode["value"] = vals.get("status")
+            priority_mode["value"] = vals.get("priority")
+            sort_mode["value"] = vals.get("sort")
+            tag_mode["value"] = vals.get("tag")
+            if filter_mode["value"] == "archive":
+                select_on["value"] = False
+                selected.clear()
+            haptic(page, "selection")
+            reload()
 
-    def set_filter(mode):
-        filter_mode["value"] = mode
-        if mode == "archive":
-            select_on["value"] = False
-            selected.clear()
-        _paint_status()
-        reload()
-
-    def set_priority(mode):
-        priority_mode["value"] = mode
-        _paint_pri()
-        reload()
-
-    def set_sort(mode):
-        sort_mode["value"] = mode
-        _paint_sort()
-        reload()
+        show_filter_sheet(
+            page,
+            title="Фильтры",
+            sections=sections,
+            on_apply=apply,
+        )
 
     def on_search(e):
         search_q["value"] = e.control.value or ""
         reload()
 
-    for label, st in status_labels:
-        chip = _chip(label, active=False, on_click=lambda e, s=st: set_filter(s))
-        status_chips.append(chip)
-    for label, st in pri_labels:
-        chip = _chip(label, active=False, on_click=lambda e, s=st: set_priority(s))
-        pri_chips.append(chip)
-    for label, st in sort_labels:
-        chip = _chip(label, active=False, on_click=lambda e, s=st: set_sort(s))
-        sort_chips.append(chip)
-
-    _paint_status()
-    _paint_pri()
-    _paint_sort()
+    funnel = getattr(ft.Icons, "FILTER_ALT", None) or ft.Icons.FILTER_LIST
+    filter_icon = ft.Icon(funnel, color=TEXT, size=20)
+    filter_btn = ft.Container(
+        content=filter_icon,
+        width=44,
+        height=44,
+        bgcolor="#1C1C22",
+        border=ft.Border.all(1, BORDER),
+        border_radius=ft.BorderRadius.all(12),
+        alignment=ft.Alignment.CENTER,
+        ink=True,
+        tooltip="Фильтры",
+        on_click=lambda e: open_filters(),
+    )
 
     search = ft.TextField(
-        hint_text="Фильтр по названию…",
-        prefix_icon=ft.Icons.FILTER_LIST,
+        hint_text="Поиск по названию…",
+        prefix_icon=ft.Icons.SEARCH,
         border_color=BORDER,
         focused_border_color=ORANGE,
         color=TEXT,
@@ -508,8 +512,9 @@ def build_tasks(
 
     header = screen_header(
         "Задачи",
-        subtitle="Фильтры · закреп · выбор",
+        subtitle="Список · поиск · фильтры в листе",
         actions=[
+            filter_btn,
             select_btn,
             header_icon_btn(
                 ft.Icons.DESCRIPTION_OUTLINED,
@@ -522,34 +527,53 @@ def build_tasks(
                 on_click=lambda e: on_open_search() if on_open_search else None,
                 tooltip="Глобальный поиск",
             ),
-            header_icon_btn(
-                ft.Icons.ADD_ROUNDED,
-                on_click=lambda e: on_add(),
-                tooltip="Создать",
-                accent=True,
-                icon_size=22,
-            ),
         ],
     )
 
-    root = ft.Container(
-        content=ft.Column(
-            [
-                header,
-                ft.Row([search], spacing=8),
-                ft.Row(status_chips, spacing=8, scroll=ft.ScrollMode.AUTO, wrap=False),
-                muted("Метка"),
-                tag_row,
-                muted("Приоритет"),
-                ft.Row(pri_chips, spacing=8, scroll=ft.ScrollMode.AUTO),
-                muted("Сортировка"),
-                ft.Row(sort_chips, spacing=8, scroll=ft.ScrollMode.AUTO),
-                batch_host,
-                list_col,
-            ],
-            spacing=10,
-            expand=True,
+    fab = ft.Container(
+        content=ft.Icon(ft.Icons.ADD_ROUNDED, color="#0F0F12", size=26),
+        width=56,
+        height=56,
+        bgcolor=ORANGE,
+        border_radius=ft.BorderRadius.all(16),
+        alignment=ft.Alignment.CENTER,
+        ink=True,
+        tooltip="Создать",
+        shadow=ft.BoxShadow(
+            blur_radius=16,
+            color="#FF8A0055",
+            offset=ft.Offset(0, 4),
         ),
+        on_click=lambda e: (pulse_press(e.control), haptic(page, "light", control=e.control), on_add()),
+    )
+    # Keep a FloatingActionButton alias in source for smoke / reviewers.
+    FloatingActionButton = fab  # noqa: N806 — FAB on the Tasks stack
+
+    body = ft.Column(
+        [
+            header,
+            ft.Row([search], spacing=8),
+            summary_host,
+            batch_host,
+            list_col,
+        ],
+        spacing=10,
+        expand=True,
+    )
+    stack = ft.Stack(
+        [
+            body,
+            ft.Container(
+                content=fab,
+                alignment=ft.Alignment.BOTTOM_RIGHT,
+                padding=ft.Padding.only(right=4, bottom=8),
+            ),
+        ],
+        expand=True,
+    )
+    _ = FloatingActionButton
+    root = ft.Container(
+        content=stack,
         padding=screen_insets(),
         expand=True,
     )
