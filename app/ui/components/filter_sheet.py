@@ -192,20 +192,17 @@ def show_filter_sheet(
         height=max_h,
     )
     wrap = sheet_motion_wrap(card)
-    sheet_kwargs = {
-        "content": wrap,
-        "bgcolor": CARD,
-        "dismissible": True,
-        "on_dismiss": lambda e: None,
-    }
-    for key, val in (
-        ("draggable", True),
-        ("enable_drag", True),
-        ("show_drag_handle", True),
-    ):
-        sheet_kwargs[key] = val
     try:
-        sheet = ft.BottomSheet(**sheet_kwargs)
+        sheet = ft.BottomSheet(
+            content=wrap,
+            bgcolor=CARD,
+            dismissible=True,
+            draggable=True,
+            show_drag_handle=True,
+            scrollable=True,
+            fullscreen=True,
+            on_dismiss=lambda e: None,
+        )
     except TypeError:
         sheet = ft.BottomSheet(
             content=wrap,
