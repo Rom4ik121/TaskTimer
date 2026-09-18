@@ -39,8 +39,8 @@ from app.ui.theme import (
 
 
 APP_VERSION = "1.0"
-# Numbered capabilities in README (Waves A–AU), kept in sync with feature_matrix.
-FEATURE_COUNT = 76
+# Numbered capabilities in README (Waves A–AV), kept in sync with feature_matrix.
+FEATURE_COUNT = 77
 
 
 def _readme_path() -> Path:
@@ -1208,7 +1208,7 @@ def build_settings(
                                 color=TEXT,
                             ),
                             muted(
-                                f"{FEATURE_COUNT} фичи · волны A–AU · "
+                                f"{FEATURE_COUNT} фичи · волны A–AU / A–AV · "
                                 f"схема SQLite {SCHEMA_VERSION}"
                             ),
                             muted(

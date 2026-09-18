@@ -1,10 +1,10 @@
 # TaskTimer — журнал изменений
 
-Кратко по волнам **A–AU** (схема SQLite → `SCHEMA_VERSION = 13`). Wave **AU** — фильтры в листах + тактильность/анимации.
+Кратко по волнам **A–AV** (схема SQLite → `SCHEMA_VERSION = 13`). Wave **AU** — фикс Холста; **AV** — фильтры в листах + тактильность/анимации.
 
 Исторические волны Z–AL: SCHEMA_VERSION = 11 (без бампа до AM).
 
-## AU — фильтры в листах, тактильность, motion
+## AV — фильтры в листах, тактильность, motion
 
 - Задачи: чипы статуса / приоритета / сортировки / меток убраны с главного экрана (шапка + поиск + список + FAB)
 - Кнопка «Фильтры» (воронка) в шапке; компактный чип-сводка при активных условиях («В работе · Высокий»)
@@ -13,11 +13,15 @@
 - `app/ui/haptics.py`: iOS/Android — `ft.HapticFeedback` / `invoke_method`; desktop — лёгкий scale-пульс. События: вкладка, готово, pin, confirm, фильтр, цифра PIN, сохранение
 - `app/ui/motion.py`: 150–280 мс fade/scale — оверлей, появление строк, splash, toast, press чипа, AnimatedSwitcher вкладок
 - Настройки: переключатель «Тактильность» (meta `haptics_enabled`, по умолчанию вкл.)
+- FEATURE_COUNT 77; schema 13 без бампа; smoke Wave AV
+
+## AU — Холст: blank-panel fix
+
+- Корень: `InteractiveViewer(constrained=False)` на Flet 0.86 / Linux desktop в phone-frame часто рисует пустую светло-серую панель (collapse sizing / transform), узлы не видны при первом открытии
+- Замена на надёжный viewport: `GestureDetector` + `Stack` + `left/top` pan + `Scale(TOP_LEFT)` + кнопки ± / ⌂ / стрелки; колесо — зум
+- `height=420` floor у области холста, чтобы Column expand после Wave AT header не схлопывал доску в 0
+- Тёмная тема `#0C0C10` сохранена; 6 seeded section cards видны сразу
 - FEATURE_COUNT 76; schema 13 без бампа; smoke Wave AU
-
-## AT — UX polish: Дом, тосты, валидация
-
-Исторические волны Z–AL: SCHEMA_VERSION = 11 (без бампа до AM).
 
 ## AT — UX polish: Дом, тосты, валидация
 

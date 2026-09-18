@@ -1,4 +1,4 @@
-# TaskTimer — матрица фич (волны A–AU)
+# TaskTimer — матрица фич (волны A–AV)
 
 Краткий one-pager возможностей. Локальное приложение (Flet + SQLite).
 
@@ -48,12 +48,9 @@
 | **AP** | Тап заметки фокуса в Аналитике → экран Фокуса (`on_open_focus`) / clipboard fallback | Аналитика, main |
 | **AQ** | Холст infinite canvas + MD vault (`data/notes`), schema 13, FEATURE 72 | Холст |
 | **AR** | PIN-лок (PBKDF2) + splash/setup/lock + `assets/icon.png`, FEATURE 73 | Лок, Настройки |
-
-**Инфра:** schema `13` (бамп AQ: `canvas_nodes`/`canvas_edges` + MD vault; AM: `time_sessions.note`), индексы SQLite, seed без double-seed, `CHANGELOG.md`, чистый dist zip, `install.ps1`, `scripts/smoke_test.py` → `SMOKE_OK` (A–AU).
-
-| **AQ** | Холст infinite canvas + MD vault (`data/notes`), schema 13, FEATURE 72 |
-| **AR** | PIN-лок (PBKDF2) + splash/setup/lock + `assets/icon.png`, FEATURE 73 |
 | **AS** | iOS IPA ready: pyproject / fullscreen iPhone / icon_ios / IOS_BUILD.md, FEATURE 74 | Packaging, main |
 | **AT** | UX polish: Home density / toasts / validation / headers, FEATURE 75 | Дом, dialogs, Настройки |
-| **AU** | Фильтры в BottomSheet + haptics/motion, FEATURE 76 | Задачи, Фокус, Настройки |
+| **AU** | Холст blank-panel fix: GestureDetector/Stack pan/zoom, height floor | Холст |
+| **AV** | Фильтры в BottomSheet + haptics/motion, FEATURE 77 | Задачи, Фокус, Настройки |
 
+**Инфра:** schema `13` (бамп AQ: `canvas_nodes`/`canvas_edges` + MD vault; AM: `time_sessions.note`), индексы SQLite, seed без double-seed, `CHANGELOG.md`, чистый dist zip, `install.ps1`, `scripts/smoke_test.py` → `SMOKE_OK` (A–AV).

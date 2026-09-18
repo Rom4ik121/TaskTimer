@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Smoke tests: Waves A–Z — seed, CRUD, archive, recur, goals, focus, search, onboarding, pin, week due, duplicate, tags, relative due, bulk complete, forecast, quiet hours, empty illus, analytics ETA, last export meta, home tips, task templates, roadmap auto-layout, schema 11, Wave Q bugfix, estimated_min, snooze, auto_complete_subtasks, weekly review, celebration, daily wrap, clear celebrated, smart suggestion, export snack, Wave X inbox/quick capture/daily note/undo complete/CSV, Wave Y recent/goal sort, Wave Z About/schema align, Wave AA hotkeys sheet / backup reminder, Wave AB Ctrl+N / backup tip dismiss, Wave AC Ctrl+F / TextField keyboard safety, Wave AD Esc leave overlay, Wave AE digit tab switch, Wave AF Space opens Focus, Wave AG morning briefing, Wave AH evening wind-down, Wave AI tomorrow plan, Wave AJ weekly task goal, Wave AK snooze all overdue, Wave AL streak freeze, Wave AM focus session notes schema 12, Wave AN focus history note filter, Wave AO analytics focus notes, Wave AP analytics note tap opens Focus, Wave AQ infinite canvas + MD vault schema 13, Wave AR PIN lock, Wave AS iOS IPA ready, Wave AT UX polish home/toasts/validation, Wave AU filter sheets / haptics / motion."""
+"""Smoke tests: Waves A–AV — includes Wave AU canvas blank-panel fix and Wave AV filter sheets / haptics / motion."""
 from __future__ import annotations
 
 import json
@@ -2519,7 +2519,7 @@ def main() -> int:
 
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
     assert "Esc — закрыть оверлей" in src_set or "Esc" in src_set
-    assert "A–AD" in src_set or "A-AD" in src_set or "A–AE" in src_set or "A-AE" in src_set or "A–AF" in src_set or "A-AF" in src_set or "A–AG" in src_set or "A-AG" in src_set or "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set
+    assert "A–AD" in src_set or "A-AD" in src_set or "A–AE" in src_set or "A-AE" in src_set or "A–AF" in src_set or "A-AF" in src_set or "A–AG" in src_set or "A-AG" in src_set or "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set or "A–AV" in src_set or "A-AV" in src_set or "A–AV" in src_set or "A-AV" in src_set
 
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AD" in rd
@@ -2566,7 +2566,7 @@ def main() -> int:
 
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
     assert "1 / 2 / 3 / 4" in src_set
-    assert "A–AE" in src_set or "A-AE" in src_set or "A–AF" in src_set or "A-AF" in src_set or "A–AG" in src_set or "A-AG" in src_set or "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set
+    assert "A–AE" in src_set or "A-AE" in src_set or "A–AF" in src_set or "A-AF" in src_set or "A–AG" in src_set or "A-AG" in src_set or "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set or "A–AV" in src_set or "A-AV" in src_set
 
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AE" in rd
@@ -2611,7 +2611,7 @@ def main() -> int:
 
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
     assert "Пробел" in src_set and "Фокус" in src_set
-    assert "A–AF" in src_set or "A-AF" in src_set or "A–AG" in src_set or "A-AG" in src_set or "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set
+    assert "A–AF" in src_set or "A-AF" in src_set or "A–AG" in src_set or "A-AG" in src_set or "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set or "A–AV" in src_set or "A-AV" in src_set
 
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AF" in rd
@@ -2707,7 +2707,7 @@ def main() -> int:
     assert "class MorningBriefing" in src_sch
     assert "class IncompleteQuota" in src_sch
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
-    assert "A–AG" in src_set or "A-AG" in src_set or "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set
+    assert "A–AG" in src_set or "A-AG" in src_set or "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set or "A–AV" in src_set or "A-AV" in src_set
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AG" in rd
     cl = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
@@ -2774,7 +2774,7 @@ def main() -> int:
     assert "wind_down_hour" in src_ss
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
     assert "wind_down" in src_set or "Вечерний режим" in src_set
-    assert "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set
+    assert "A–AH" in src_set or "A-AH" in src_set or "A–AI" in src_set or "A-AI" in src_set or "A–AJ" in src_set or "A-AJ" in src_set or "A–AK" in src_set or "A-AK" in src_set or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set or "A–AV" in src_set or "A-AV" in src_set
     assert "Вечерний режим" in src_set
     src_sch = (ROOT / "app/schemas.py").read_text(encoding="utf-8")
     assert "wind_down_hour" in src_sch
@@ -2945,7 +2945,7 @@ def main() -> int:
         "A–AJ" in src_set or "A-AJ" in src_set
         or "A–AK" in src_set or "A-AK" in src_set
         or "A–AL" in src_set or "A-AL" in src_set
-        or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set
+        or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set or "A–AV" in src_set or "A-AV" in src_set
     )
     src_sch = (ROOT / "app/schemas.py").read_text(encoding="utf-8")
     assert "weekly_task_target" in src_sch
@@ -3013,7 +3013,7 @@ def main() -> int:
     assert (
         "A–AK" in src_set or "A-AK" in src_set
         or "A–AL" in src_set or "A-AL" in src_set
-        or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set
+        or "A–AM" in src_set or "A-AM" in src_set or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set or "A–AV" in src_set or "A-AV" in src_set
     )
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AK" in rd
@@ -3118,8 +3118,8 @@ def main() -> int:
         or "A-AP" in src_set
         or "A–AQ" in src_set
         or "A-AQ" in src_set
-        or "A–AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set
-        or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set
+        or "A–AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set or "A–AV" in src_set or "A-AV" in src_set
+        or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set or "A–AV" in src_set or "A-AV" in src_set
     )
     assert "do_streak_freeze" in src_set
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -3207,7 +3207,7 @@ def main() -> int:
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
     assert (
         "A–AM" in src_set or "A-AM" in src_set
-        or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set
+        or "A–AN" in src_set or "A-AN" in src_set or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set or "A–AV" in src_set or "A-AV" in src_set
     )
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AM" in rd
@@ -3267,7 +3267,7 @@ def main() -> int:
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
     assert (
         "A–AN" in src_set or "A-AN" in src_set
-        or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set
+        or "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set or "A–AV" in src_set or "A-AV" in src_set
     )
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AN" in rd
@@ -3347,12 +3347,12 @@ def main() -> int:
     assert "recent_focus_notes" in src_ui
     assert "focus_notes_section" in src_ui
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
-    assert "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set
+    assert "A–AO" in src_set or "A-AO" in src_set or "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set or "A–AV" in src_set or "A-AV" in src_set
     assert (
         "FEATURE_COUNT = 70" in src_set
         or "FEATURE_COUNT = 71" in src_set
         or "FEATURE_COUNT = 72" in src_set
-        or "FEATURE_COUNT = 73" in src_set or "FEATURE_COUNT = 74" in src_set or "FEATURE_COUNT = 75" in src_set or "FEATURE_COUNT = 76" in src_set
+        or "FEATURE_COUNT = 73" in src_set or "FEATURE_COUNT = 74" in src_set or "FEATURE_COUNT = 75" in src_set or "FEATURE_COUNT = 76" in src_set or "FEATURE_COUNT = 77" in src_set
     )
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AO" in rd
@@ -3393,9 +3393,9 @@ def main() -> int:
         or "FEATURE_COUNT = 71" in src_set
         or "FEATURE_COUNT = 73" in src_set
         or "FEATURE_COUNT = 74" in src_set
-        or "FEATURE_COUNT = 75" in src_set or "FEATURE_COUNT = 76" in src_set
+        or "FEATURE_COUNT = 75" in src_set or "FEATURE_COUNT = 76" in src_set or "FEATURE_COUNT = 77" in src_set
     )
-    assert "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set
+    assert "A–AP" in src_set or "A-AP" in src_set or "A–AQ" in src_set or "A-AQ" in src_set or "A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set or "A–AV" in src_set or "A-AV" in src_set
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AP" in rd
     cl = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
@@ -3494,12 +3494,12 @@ def main() -> int:
     src_home = (ROOT / "app/ui/screens/home.py").read_text(encoding="utf-8")
     assert "home.md" in src_home
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
-    assert "FEATURE_COUNT = 72" in src_set or "FEATURE_COUNT = 73" in src_set or "FEATURE_COUNT = 74" in src_set or "FEATURE_COUNT = 75" in src_set or "FEATURE_COUNT = 76" in src_set
+    assert "FEATURE_COUNT = 72" in src_set or "FEATURE_COUNT = 73" in src_set or "FEATURE_COUNT = 74" in src_set or "FEATURE_COUNT = 75" in src_set or "FEATURE_COUNT = 76" in src_set or "FEATURE_COUNT = 77" in src_set
     assert (
         "A–AQ" in src_set
         or "A-AQ" in src_set
-        or "A–AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set
-        or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set
+        or "A–AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set or "A–AV" in src_set or "A-AV" in src_set
+        or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set or "A–AV" in src_set or "A-AV" in src_set
     )
     rd = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AQ" in rd or "Холст" in rd
@@ -3581,7 +3581,9 @@ def main() -> int:
     src_road_dep = (ROOT / "app/ui/screens/roadmap.py").read_text(encoding="utf-8")
     assert "DEPRECATED" in src_road_dep
     src_cb = (ROOT / "app/ui/screens/canvas_board.py").read_text(encoding="utf-8")
-    assert "InteractiveViewer" in src_cb and "alignment" in src_cb
+    # Wave AU+: InteractiveViewer was flaky (blank panel); GestureDetector viewport
+    assert ("GestureDetector" in src_cb or "InteractiveViewer" in src_cb)
+    assert "Scale" in src_cb or "alignment" in src_cb
 
     print("Wave AQ OK")
 
@@ -3721,8 +3723,8 @@ def main() -> int:
     src_set = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
     assert "Сменить PIN" in src_set or "сменить PIN" in src_set
     assert "биометр" in src_set.lower() or "Face ID" in src_set
-    assert "FEATURE_COUNT = 73" in src_set or "FEATURE_COUNT = 74" in src_set or "FEATURE_COUNT = 75" in src_set or "FEATURE_COUNT = 76" in src_set
-    assert ("A–AR" in src_set or "A-AR" in src_set or "A–AS" in src_set or "A-AS" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set or "A–AT" in src_set or "A-AT" in src_set or "A–AU" in src_set or "A-AU" in src_set)
+    assert "FEATURE_COUNT = 73" in src_set or "FEATURE_COUNT = 74" in src_set or "FEATURE_COUNT = 75" in src_set or "FEATURE_COUNT = 76" in src_set or "FEATURE_COUNT = 77" in src_set
+    assert any(x in src_set for x in ("A–AR", "A-AR", "A–AS", "A-AS", "A–AT", "A-AT", "A–AU", "A-AU", "A–AV", "A-AV"))
 
     icon = ROOT / "assets" / "icon.png"
     assert icon.is_file(), "assets/icon.png required"
@@ -3823,7 +3825,7 @@ def main() -> int:
     fm_as = (ROOT / "scripts/feature_matrix.md").read_text(encoding="utf-8")
     assert "**AS**" in fm_as
     src_set_as = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
-    assert "FEATURE_COUNT = 74" in src_set_as or "FEATURE_COUNT = 75" in src_set_as or "FEATURE_COUNT = 76" in src_set_as
+    assert "FEATURE_COUNT = 74" in src_set_as or "FEATURE_COUNT = 75" in src_set_as or "FEATURE_COUNT = 76" in src_set_as or "FEATURE_COUNT = 77" in src_set_as
     print("Wave AS OK")
 
 
@@ -3864,8 +3866,8 @@ def main() -> int:
     assert "Введите название задачи" in src_ct
 
     src_set_at = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
-    assert "FEATURE_COUNT = 75" in src_set_at or "FEATURE_COUNT = 76" in src_set_at
-    assert "A–AT" in src_set_at or "A-AT" in src_set_at or "A–AU" in src_set_at or "A-AU" in src_set_at
+    assert "FEATURE_COUNT = 75" in src_set_at or "FEATURE_COUNT = 76" in src_set_at or "FEATURE_COUNT = 77" in src_set_at
+    assert any(x in src_set_at for x in ("A–AT", "A-AT", "A–AU", "A-AU", "A–AV", "A-AV"))
     assert "group_heading" in src_set_at
     assert "validation_fail" in src_set_at
 
@@ -3912,28 +3914,83 @@ def main() -> int:
 
 
 
-    print("== Wave AU: filter sheets / haptics / motion ==")
+    print("== Wave AU: canvas blank-panel fix / GestureDetector viewport ==")
     from app.ui.screens import settings as settings_ui_au
-    from app.ui import haptics as haptics_au
-    from app.ui import motion as motion_au
-    from app.ui.components import filter_sheet as filter_sheet_au
+    from app.ui.screens.canvas_board import build_canvas_board
+    from app.services import canvas_service, notes_service
+    from app.db import get_session, init_db
+
+    assert settings_ui_au.FEATURE_COUNT in (76, 77)
+    src_cb_au = (ROOT / "app/ui/screens/canvas_board.py").read_text(encoding="utf-8")
+    assert "GestureDetector" in src_cb_au
+    assert "InteractiveViewer(" not in src_cb_au
+    assert "Scale(" in src_cb_au
+    assert "pan_x" in src_cb_au and "pan_y" in src_cb_au
+    assert "_zoom_in" in src_cb_au and "_frame_home" in src_cb_au
+    assert "height=420" in src_cb_au
+    assert "screen_header" in src_cb_au
+    init_db()
+    notes_service.ensure_vault()
+    with get_session() as s:
+        canvas_service.ensure_canvas_seeded(s)
+        nodes = canvas_service.list_nodes(s)
+    assert len([n for n in nodes if (n.kind or "") == "section"]) >= 6
+
+    class _FakePageAU:
+        def update(self):
+            pass
+        def run_task(self, *a, **k):
+            pass
+        def show_dialog(self, *a, **k):
+            pass
+        def pop_dialog(self):
+            pass
+        overlay = []
+
+    board = build_canvas_board(_FakePageAU())
+    titles = []
+
+    def _walk_au(c):
+        if c is None:
+            return
+        v = getattr(c, "value", None)
+        if isinstance(v, str) and v in ("Дом", "Задачи", "Цели", "Фокус", "Аналитика", "Роадмап"):
+            titles.append(v)
+        content = getattr(c, "content", None)
+        if content is not None:
+            _walk_au(content)
+        for ch in getattr(c, "controls", None) or []:
+            _walk_au(ch)
+
+    _walk_au(board)
+    assert len(set(titles)) >= 6, titles
+
+    src_set_au = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
+    assert "FEATURE_COUNT = 76" in src_set_au or "FEATURE_COUNT = 77" in src_set_au
+    assert "A–AU" in src_set_au or "A-AU" in src_set_au
+
+    print("== Wave AV: filter sheets / haptics / motion ==")
+    from app.ui.screens import settings as settings_ui_av
+    from app.ui import haptics as haptics_av
+    from app.ui import motion as motion_av
+    from app.ui.components import filter_sheet as filter_sheet_av
     from app.db import get_session, get_meta
     from app.schemas import SettingsUpdate
     from app.services import settings_service
 
-    assert settings_ui_au.FEATURE_COUNT == 76
-    assert hasattr(haptics_au, "haptic")
-    assert hasattr(haptics_au, "attach")
-    assert hasattr(haptics_au, "set_enabled")
-    assert hasattr(motion_au, "make_switcher")
-    assert hasattr(motion_au, "appear_item")
-    assert hasattr(motion_au, "splash_fade")
-    assert 150 <= motion_au.DURATION_FAST <= 280
-    assert 150 <= motion_au.DURATION_MED <= 280
-    assert 150 <= motion_au.DURATION_SLOW <= 280
-    assert hasattr(filter_sheet_au, "show_filter_sheet")
-    assert hasattr(filter_sheet_au, "FilterSection")
-    haptics_au.haptic(None, "light")  # no-op, must not raise
+    assert settings_ui_av.FEATURE_COUNT == 77
+    assert hasattr(haptics_av, "haptic")
+    assert hasattr(haptics_av, "attach")
+    assert hasattr(haptics_av, "set_enabled")
+    assert hasattr(motion_av, "make_switcher")
+    assert hasattr(motion_av, "appear_item")
+    assert hasattr(motion_av, "splash_fade")
+    assert 150 <= motion_av.DURATION_FAST <= 280
+    assert 150 <= motion_av.DURATION_MED <= 280
+    assert 150 <= motion_av.DURATION_SLOW <= 280
+    assert hasattr(filter_sheet_av, "show_filter_sheet")
+    assert hasattr(filter_sheet_av, "FilterSection")
+    haptics_av.haptic(None, "light")  # no-op, must not raise
 
     with get_session() as s:
         st = settings_service.get_settings(s)
@@ -3945,41 +4002,49 @@ def main() -> int:
         assert settings_service.get_settings(s).haptics_enabled is True
         assert get_meta(s, "haptics_enabled") == "1"
 
-    src_tasks_au = (ROOT / "app/ui/screens/tasks.py").read_text(encoding="utf-8")
-    assert "Фильтры" in src_tasks_au
-    src_sheet_au = (ROOT / "app/ui/components/filter_sheet.py").read_text(encoding="utf-8")
-    assert "Сбросить" in src_sheet_au
-    assert "Готово" in src_sheet_au
-    assert "show_filter_sheet" in src_tasks_au
-    assert "FILTER_ALT" in src_tasks_au or "FILTER_LIST" in src_tasks_au
-    assert "FloatingActionButton" in src_tasks_au
-    assert "ft.Row(status_chips" not in src_tasks_au
-    assert "summary_chip" in src_tasks_au
-    assert "haptic(" in src_tasks_au
+    src_tasks_av = (ROOT / "app/ui/screens/tasks.py").read_text(encoding="utf-8")
+    assert "Фильтры" in src_tasks_av
+    src_sheet_av = (ROOT / "app/ui/components/filter_sheet.py").read_text(encoding="utf-8")
+    assert "Сбросить" in src_sheet_av
+    assert "Готово" in src_sheet_av
+    assert "show_filter_sheet" in src_tasks_av
+    assert "FILTER_ALT" in src_tasks_av or "FILTER_LIST" in src_tasks_av
+    assert "FloatingActionButton" in src_tasks_av
+    assert "ft.Row(status_chips" not in src_tasks_av
+    assert "summary_chip" in src_tasks_av
+    assert "haptic(" in src_tasks_av
 
-    src_focus_au = (ROOT / "app/ui/screens/focus.py").read_text(encoding="utf-8")
-    assert "show_filter_sheet" in src_focus_au
-    assert "hist_chips" in src_focus_au
-    assert "С заметкой" in src_focus_au
-    assert "open_hist_filters" in src_focus_au
+    src_focus_av = (ROOT / "app/ui/screens/focus.py").read_text(encoding="utf-8")
+    assert "show_filter_sheet" in src_focus_av
+    assert "hist_chips" in src_focus_av
+    assert "С заметкой" in src_focus_av
+    assert "open_hist_filters" in src_focus_av
 
-    src_set_au = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
-    assert "FEATURE_COUNT = 76" in src_set_au
-    assert "Тактильность" in src_set_au
-    assert "A–AU" in src_set_au or "A-AU" in src_set_au
-    assert "haptics_sw" in src_set_au
+    src_set_av = (ROOT / "app/ui/screens/settings.py").read_text(encoding="utf-8")
+    assert "FEATURE_COUNT = 77" in src_set_av
+    assert "Тактильность" in src_set_av
+    assert "A–AV" in src_set_av or "A-AV" in src_set_av
+    assert "haptics_sw" in src_set_av
 
-    src_home_au = (ROOT / "app/ui/screens/home.py").read_text(encoding="utf-8")
-    assert "today_sheet_open" in src_home_au
-    assert "_digest_chip" in src_home_au
+    src_home_av = (ROOT / "app/ui/screens/home.py").read_text(encoding="utf-8")
+    assert "today_sheet_open" in src_home_av
+    assert "_digest_chip" in src_home_av
 
-    src_main_au = (ROOT / "app/main.py").read_text(encoding="utf-8")
-    assert "attach_haptics" in src_main_au
-    assert "make_switcher" in src_main_au
+    src_main_av = (ROOT / "app/main.py").read_text(encoding="utf-8")
+    assert "attach_haptics" in src_main_av
+    assert "make_switcher" in src_main_av
 
     src_hap = (ROOT / "app/ui/haptics.py").read_text(encoding="utf-8")
     assert "HapticFeedback" in src_hap
     assert "invoke_method" in src_hap
+
+    rd_av = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "Wave AV" in rd_av
+    cl_av = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    assert "## AV —" in cl_av or "## AV " in cl_av
+    fm_av = (ROOT / "scripts/feature_matrix.md").read_text(encoding="utf-8")
+    assert "**AV**" in fm_av
+    print("Wave AV OK")
 
     rd_au = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Wave AU" in rd_au
