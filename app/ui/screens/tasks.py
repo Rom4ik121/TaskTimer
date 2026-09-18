@@ -1,4 +1,4 @@
-"""Tasks list — status/priority/archive filters, sort, search, overdue chips."""
+"""Tasks list — filters live in a dedicated sheet; main UI stays the list."""
 from __future__ import annotations
 
 import flet as ft
@@ -6,36 +6,79 @@ import flet as ft
 from app.db import get_session
 from app.services import task_service
 from app.ui.components.cards import empty_state, task_card
-from app.ui.components.dialogs import confirm_delete, show_snack, validation_fail
+from app.ui.components.dialogs import (
+    confirm_delete,
+    show_filter_sheet,
+    show_snack,
+    validation_fail,
+)
 from app.ui.theme import (
     BORDER,
     GREEN,
-    MUTED,
     ORANGE,
     RED,
     TAG_COLORS,
     TEXT,
     header_icon_btn,
-    muted,
     screen_header,
     screen_insets,
 )
 
 
-def _chip(label: str, *, active: bool, accent: str = ORANGE, on_click=None) -> ft.Container:
-    return ft.Container(
-        content=ft.Text(
-            label,
-            size=12,
-            color="#0F0F12" if active else MUTED,
-            weight=ft.FontWeight.W_500,
-        ),
-        padding=ft.Padding.symmetric(horizontal=12, vertical=8),
-        border_radius=ft.BorderRadius.all(16),
-        bgcolor=accent if active else "transparent",
-        border=ft.Border.all(1, accent if active else BORDER),
-        on_click=on_click,
-    )
+STATUS_FILTER_LABELS: list[tuple[str, str | None]] = [
+    ("Все", None),
+    ("К выполнению", "todo"),
+    ("В работе", "in_progress"),
+    ("Готово", "done"),
+    ("Сегодня", "due_today"),
+    ("Просрочено", "overdue"),
+    ("Закреплённые", "pinned"),
+    ("Входящие", "inbox"),
+    ("Архив", "archive"),
+]
+PRIORITY_FILTER_LABELS: list[tuple[str, str | None]] = [
+    ("Все", None),
+    ("Высокий", "high"),
+    ("Средний", "medium"),
+    ("Низкий", "low"),
+]
+SORT_FILTER_LABELS: list[tuple[str, str | None]] = [
+    ("Умная", None),
+    ("Срок", "due"),
+    ("Приоритет", "priority"),
+    ("Создано", "created"),
+]
+
+
+def _label_of(pairs: list[tuple[str, str | None]], value) -> str | None:
+    for label, key in pairs:
+        if key == value:
+            return None if key is None else label
+    return str(value) if value is not None else None
+
+
+def compact_filter_summary(
+    status=None,
+    priority=None,
+    sort=None,
+    tag=None,
+) -> str | None:
+    """One-line RU summary of non-default list filters, or None if all default."""
+    parts: list[str] = []
+    st = _label_of(STATUS_FILTER_LABELS, status)
+    if st:
+        parts.append(st)
+    pr = _label_of(PRIORITY_FILTER_LABELS, priority)
+    if pr:
+        parts.append(pr)
+    so = _label_of(SORT_FILTER_LABELS, sort)
+    if so:
+        parts.append(so)
+    if tag:
+        parts.append(str(tag))
+    if not parts:
+        return None
+    return "Фильтр: " + " · ".join(parts)
 
 
 def build_tasks(
@@ -58,6 +101,7 @@ def build_tasks(
     selected: set[int] = set()
     list_col = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, expand=True)
     batch_host = ft.Container(visible=False)
+    summary_host = ft.Container(visible=False)
     select_btn_icon = ft.Icon(ft.Icons.CHECKLIST, color=TEXT, size=20)
     select_btn = ft.Container(
         content=select_btn_icon,
@@ -70,78 +114,78 @@ def build_tasks(
         ink=True,
         tooltip="Выбрать",
     )
+    filter_btn_icon = ft.Icon(ft.Icons.FILTER_LIST, color=TEXT, size=20)
+    filter_btn = ft.Container(
+        content=filter_btn_icon,
+        width=44,
+        height=44,
+        bgcolor="#1C1C22",
+        border=ft.Border.all(1, BORDER),
+        border_radius=ft.BorderRadius.all(12),
+        alignment=ft.Alignment.CENTER,
+        ink=True,
+        tooltip="Фильтры",
+    )
 
-    status_keys = [None, "todo", "in_progress", "done", "due_today", "overdue", "pinned", "inbox", "archive"]
-    status_labels = [
-        ("Все", None),
-        ("К выполнению", "todo"),
-        ("В работе", "in_progress"),
-        ("Готово", "done"),
-        ("Сегодня", "due_today"),
-        ("Просрочено", "overdue"),
-        ("Закреплённые", "pinned"),
-        ("Входящие", "inbox"),
-        ("Архив", "archive"),
-    ]
-    pri_keys = [None, "high", "medium", "low"]
-    pri_labels = [
-        ("Все", None),
-        ("Высокий", "high"),
-        ("Средний", "medium"),
-        ("Низкий", "low"),
-    ]
-    sort_keys = [None, "due", "priority", "created"]
-    sort_labels = [
-        ("Умная", None),
-        ("Срок", "due"),
-        ("Приоритет", "priority"),
-        ("Создано", "created"),
-    ]
-
-    status_chips: list[ft.Container] = []
-    pri_chips: list[ft.Container] = []
-    sort_chips: list[ft.Container] = []
-
-    def _paint_status():
-        mode = filter_mode["value"]
-        for i, chip in enumerate(status_chips):
-            key = status_keys[i]
-            active = mode == key
-            if key == "overdue" and active:
-                accent = RED
-            elif key == "pinned" and active:
-                accent = ORANGE
-            elif key == "inbox" and active:
-                accent = ORANGE
-            else:
-                accent = ORANGE
-            chip.bgcolor = accent if active else "transparent"
-            chip.border = ft.Border.all(1, accent if active else BORDER)
-            chip.content.color = "#0F0F12" if active else MUTED
-
-    def _paint_pri():
-        mode = priority_mode["value"]
-        for i, chip in enumerate(pri_chips):
-            key = pri_keys[i]
-            active = mode == key
-            chip.bgcolor = ORANGE if active else "transparent"
-            chip.border = ft.Border.all(1, ORANGE if active else BORDER)
-            chip.content.color = "#0F0F12" if active else MUTED
-
-    def _paint_sort():
-        mode = sort_mode["value"]
-        for i, chip in enumerate(sort_chips):
-            key = sort_keys[i]
-            active = mode == key
-            chip.bgcolor = ORANGE if active else "transparent"
-            chip.border = ft.Border.all(1, ORANGE if active else BORDER)
-            chip.content.color = "#0F0F12" if active else MUTED
+    def _filters_active() -> bool:
+        return any(
+            (
+                filter_mode["value"] is not None,
+                priority_mode["value"] is not None,
+                sort_mode["value"] is not None,
+                tag_mode["value"] is not None,
+            )
+        )
 
     def _paint_select_btn():
         on = select_on["value"]
         select_btn_icon.color = ORANGE if on else TEXT
         select_btn.border = ft.Border.all(1, ORANGE if on else BORDER)
         select_btn.tooltip = "Готово" if on else "Выбрать"
+
+    def _paint_filter_btn():
+        on = _filters_active()
+        filter_btn_icon.color = ORANGE if on else TEXT
+        filter_btn.border = ft.Border.all(1, ORANGE if on else BORDER)
+        filter_btn.tooltip = "Фильтры · активны" if on else "Фильтры"
+
+    def _paint_summary():
+        text = compact_filter_summary(
+            filter_mode["value"],
+            priority_mode["value"],
+            sort_mode["value"],
+            tag_mode["value"],
+        )
+        if not text:
+            summary_host.visible = False
+            summary_host.content = None
+            return
+        summary_host.visible = True
+        summary_host.content = ft.Container(
+            content=ft.Row(
+                [
+                    ft.Icon(ft.Icons.FILTER_LIST, color=ORANGE, size=14),
+                    ft.Text(
+                        text,
+                        size=12,
+                        weight=ft.FontWeight.W_600,
+                        color=TEXT,
+                        expand=True,
+                        max_lines=1,
+                        overflow=ft.TextOverflow.ELLIPSIS,
+                    ),
+                ],
+                spacing=8,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            ),
+            padding=ft.Padding.symmetric(horizontal=12, vertical=8),
+            bgcolor="#1C1C22",
+            border=ft.Border.all(1, ORANGE),
+            border_radius=ft.BorderRadius.all(16),
+            on_click=open_filters,
+            ink=True,
+            tooltip="Изменить фильтры",
+        )
 
     def _paint_batch():
         on = select_on["value"]
@@ -220,10 +264,6 @@ def build_tasks(
         mode = filter_mode["value"]
         with get_session() as session:
             tasks = _fetch(session)
-            available_tags = task_service.list_color_tags(
-                session, archived=(mode == "archive")
-            )
-        _rebuild_tag_chips(available_tags)
         if not tasks:
             hint = "Смените фильтр или создайте задачу кнопкой +"
             title = "Задач не найдено"
@@ -295,8 +335,72 @@ def build_tasks(
                     )
                 )
         _paint_select_btn()
+        _paint_filter_btn()
+        _paint_summary()
         _paint_batch()
         page.update()
+
+    def apply_filters(values: dict):
+        filter_mode["value"] = values.get("status")
+        priority_mode["value"] = values.get("priority")
+        sort_mode["value"] = values.get("sort")
+        tag_mode["value"] = values.get("tag")
+        if filter_mode["value"] == "archive":
+            select_on["value"] = False
+            selected.clear()
+        reload()
+
+    def open_filters(_e=None):
+        mode = filter_mode["value"]
+        with get_session() as session:
+            tags = task_service.list_color_tags(
+                session, archived=(mode == "archive")
+            )
+        tag_options: list[tuple[str, str | None]] = [("Все метки", None)]
+        tag_accents: dict = {}
+        for tg in tags:
+            tag_options.append((tg, tg))
+            tag_accents[tg] = TAG_COLORS.get(tg, ORANGE)
+        show_filter_sheet(
+            page,
+            title="Фильтры",
+            subtitle="Статус, приоритет, сортировка и теги",
+            sections=[
+                {
+                    "key": "status",
+                    "title": "Статус",
+                    "options": STATUS_FILTER_LABELS,
+                    "value": filter_mode["value"],
+                    "accents": {"overdue": RED},
+                },
+                {
+                    "key": "priority",
+                    "title": "Приоритет",
+                    "options": PRIORITY_FILTER_LABELS,
+                    "value": priority_mode["value"],
+                },
+                {
+                    "key": "sort",
+                    "title": "Сортировка",
+                    "options": SORT_FILTER_LABELS,
+                    "value": sort_mode["value"],
+                },
+                {
+                    "key": "tag",
+                    "title": "Теги",
+                    "options": tag_options,
+                    "value": tag_mode["value"],
+                    "accents": tag_accents,
+                },
+            ],
+            reset_values={
+                "status": None,
+                "priority": None,
+                "sort": None,
+                "tag": None,
+            },
+            on_apply=apply_filters,
+        )
 
     def toggle_pin(tid: int, pinned: bool):
         with get_session() as session:
@@ -375,7 +479,6 @@ def build_tasks(
             confirm_label="В архив",
         )
 
-
     def do_batch_complete():
         ids = list(selected)
         if not ids:
@@ -415,87 +518,13 @@ def build_tasks(
             confirm_label="В архив",
         )
 
-    tag_chips: list[ft.Container] = []
-    tag_row = ft.Row(tag_chips, spacing=8, scroll=ft.ScrollMode.AUTO)
-
-    def _paint_tags():
-        mode = tag_mode["value"]
-        for chip in tag_chips:
-            key = chip.data
-            active = mode == key
-            accent = TAG_COLORS.get(key or "", ORANGE) if key else ORANGE
-            chip.bgcolor = accent if active else "transparent"
-            chip.border = ft.Border.all(1, accent if active else BORDER)
-            chip.content.color = "#0F0F12" if active else MUTED
-
-    def set_tag(mode):
-        tag_mode["value"] = mode
-        _paint_tags()
-        reload()
-
-    def _rebuild_tag_chips(tags: list[str]):
-        tag_chips.clear()
-        tag_row.controls.clear()
-        all_chip = _chip(
-            "Все метки",
-            active=tag_mode["value"] is None,
-            on_click=lambda e: set_tag(None),
-        )
-        all_chip.data = None
-        tag_chips.append(all_chip)
-        tag_row.controls.append(all_chip)
-        for tg in tags:
-            chip = _chip(
-                tg,
-                active=tag_mode["value"] == tg,
-                accent=TAG_COLORS.get(tg, ORANGE),
-                on_click=lambda e, t=tg: set_tag(t),
-            )
-            chip.data = tg
-            tag_chips.append(chip)
-            tag_row.controls.append(chip)
-        _paint_tags()
-
-
-    def set_filter(mode):
-        filter_mode["value"] = mode
-        if mode == "archive":
-            select_on["value"] = False
-            selected.clear()
-        _paint_status()
-        reload()
-
-    def set_priority(mode):
-        priority_mode["value"] = mode
-        _paint_pri()
-        reload()
-
-    def set_sort(mode):
-        sort_mode["value"] = mode
-        _paint_sort()
-        reload()
-
     def on_search(e):
         search_q["value"] = e.control.value or ""
         reload()
 
-    for label, st in status_labels:
-        chip = _chip(label, active=False, on_click=lambda e, s=st: set_filter(s))
-        status_chips.append(chip)
-    for label, st in pri_labels:
-        chip = _chip(label, active=False, on_click=lambda e, s=st: set_priority(s))
-        pri_chips.append(chip)
-    for label, st in sort_labels:
-        chip = _chip(label, active=False, on_click=lambda e, s=st: set_sort(s))
-        sort_chips.append(chip)
-
-    _paint_status()
-    _paint_pri()
-    _paint_sort()
-
     search = ft.TextField(
-        hint_text="Фильтр по названию…",
-        prefix_icon=ft.Icons.FILTER_LIST,
+        hint_text="Поиск по названию…",
+        prefix_icon=ft.Icons.SEARCH,
         border_color=BORDER,
         focused_border_color=ORANGE,
         color=TEXT,
@@ -505,11 +534,13 @@ def build_tasks(
     )
 
     select_btn.on_click = toggle_select_mode
+    filter_btn.on_click = open_filters
 
     header = screen_header(
         "Задачи",
-        subtitle="Фильтры · закреп · выбор",
+        subtitle="поиск · выбор",
         actions=[
+            filter_btn,
             select_btn,
             header_icon_btn(
                 ft.Icons.DESCRIPTION_OUTLINED,
@@ -537,13 +568,7 @@ def build_tasks(
             [
                 header,
                 ft.Row([search], spacing=8),
-                ft.Row(status_chips, spacing=8, scroll=ft.ScrollMode.AUTO, wrap=False),
-                muted("Метка"),
-                tag_row,
-                muted("Приоритет"),
-                ft.Row(pri_chips, spacing=8, scroll=ft.ScrollMode.AUTO),
-                muted("Сортировка"),
-                ft.Row(sort_chips, spacing=8, scroll=ft.ScrollMode.AUTO),
+                summary_host,
                 batch_host,
                 list_col,
             ],

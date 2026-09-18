@@ -11,7 +11,7 @@
 - SQLAlchemy 2.x + SQLite
 - Pydantic v2
 
-## Возможности (Waves A–AS)
+## Возможности (Waves A–AU)
 
 1. CRUD задач (статус / приоритет / срок / метка / связь с целью / **архив**)
 2. **Повторяющиеся задачи** — `recur_rule` none|daily|weekly + `recur_anchor`; при «Готово» спавнится новая todo со сдвинутым сроком, пометкой «из повтора» и **копией открытых подзадач**; опция `archive_on_recur_done` архивирует родителя
@@ -24,7 +24,7 @@
 9. Фокус-таймер (Pomodoro) — дефолты из Настроек + **статы за 7 дней**
 10. Roadmap: узлы, статусы, рёбра + **список связей from→to с удалением (confirm)**
 11. Аналитика: donut + 14 дней + серии + heatmap + **фокус за неделю**
-12. Фильтры задач: статус / **Сегодня** / Просрочено / **Архив** + чипы приоритета **Все / Высокий / Средний / Низкий**
+12. Фильтры задач: лист «Фильтры» (статус / Сегодня / Просрочено / Архив / приоритет / сортировка / теги) — не чипы на основном экране
 13. Баннеры на Доме: просроченные и на сегодня → фильтр Задач
 13a. **Глобальный поиск** (Дом / Задачи) — задачи + цели по названию
 13b. Сортировка задач: умная / срок / приоритет / создано
@@ -96,6 +96,7 @@
 73. **Wave AR — PIN-лок и иконка**: первый запуск (splash → онбординг → настройка PIN / «Настроить позже»); повторный запуск с локом — экран PIN; солёный PBKDF2-хеш; Face ID-переключатель с fallback на desktop; `assets/icon.png`
 74. **Wave AS — iOS IPA ready**: `pyproject.toml` / fullscreen iPhone layout / `icon_ios.png` / docs/IOS_BUILD.md; FEATURE_COUNT 74
 75. **Wave AT — UX polish**: Дом без перегруза (чипы + лист «Сегодня», max 2 баннера); общие тосты/модалки/валидация; шапки секций; FEATURE_COUNT 75
+76. **Wave AU — фильтры в листе**: чипы статуса/приоритета/сортировки/тегов на Задачах вынесены в BottomSheet «Фильтры»; сводка на главном экране; FEATURE_COUNT 76
 
 ## Быстрая установка (Windows)
 
@@ -168,6 +169,7 @@ SQLite: `data/tasktimer.db` (создаётся автоматически).
 
 Версия схемы: `SCHEMA_VERSION = 13` в `app_meta`.
 
+- **v13 + Wave AU**: фильтры задач в BottomSheet; компактная сводка на списке; FEATURE_COUNT 76; schema 13 без бампа
 - **v13 + Wave AT**: UX polish (Home density, toast/modal/validation API, section headers); FEATURE_COUNT 75; schema 13 без бампа
 - **v13 + Wave AS**: iOS packaging (`pyproject.toml`, fullscreen mobile, `icon_ios.png`, IOS_BUILD.md); FEATURE_COUNT 74; schema 13 без бампа
 - **v13 + Wave AR**: PIN-лок (PBKDF2), splash / setup / lock screens, `assets/icon.png`; FEATURE_COUNT 73; schema 13 без бампа
