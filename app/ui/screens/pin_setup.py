@@ -5,7 +5,7 @@ import flet as ft
 
 from app.db import get_session
 from app.services import lock_service
-from app.ui.components.dialogs import show_snack
+from app.ui.components.dialogs import show_toast
 from app.ui.components.pin_pad import build_number_pad, build_pin_dots
 from app.ui.theme import BG, BORDER, CARD, MUTED, ORANGE, RED, TEXT
 
@@ -131,7 +131,7 @@ def build_pin_setup(
     def _set_bio(v: bool) -> None:
         state["bio"] = v
         if v and not lock_service.is_biometrics_available():
-            show_snack(page, lock_service.biometrics_unavailable_message())
+            show_toast(page, lock_service.biometrics_unavailable_message(), kind="warning")
 
     def _finish(bio: bool) -> None:
         pin = state["first"]
@@ -157,6 +157,7 @@ def build_pin_setup(
             state["step"] = "enter"
             state["first"] = ""
             paint()
+            show_toast(page, "PIN не совпадает — введите заново", kind="error")
             return
         if is_change:
             _finish(False)

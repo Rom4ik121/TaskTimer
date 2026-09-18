@@ -6,8 +6,20 @@ import flet as ft
 from app.db import get_session
 from app.services import task_service
 from app.ui.components.cards import empty_state, task_card
-from app.ui.components.dialogs import confirm_delete, show_snack
-from app.ui.theme import BORDER, GREEN, MUTED, ORANGE, RED, TAG_COLORS, TEXT, muted
+from app.ui.components.dialogs import confirm_delete, show_snack, validation_fail
+from app.ui.theme import (
+    BORDER,
+    GREEN,
+    MUTED,
+    ORANGE,
+    RED,
+    TAG_COLORS,
+    TEXT,
+    header_icon_btn,
+    muted,
+    screen_header,
+    screen_insets,
+)
 
 
 def _chip(label: str, *, active: bool, accent: str = ORANGE, on_click=None) -> ft.Container:
@@ -343,7 +355,7 @@ def build_tasks(
     def do_batch_archive():
         ids = list(selected)
         if not ids:
-            show_snack(page, "Ничего не выбрано", error=True)
+            validation_fail(page, "Ничего не выбрано")
             return
 
         def yes():
@@ -367,7 +379,7 @@ def build_tasks(
     def do_batch_complete():
         ids = list(selected)
         if not ids:
-            show_snack(page, "Ничего не выбрано", error=True)
+            validation_fail(page, "Ничего не выбрано")
             return
 
         def yes():
@@ -494,55 +506,38 @@ def build_tasks(
 
     select_btn.on_click = toggle_select_mode
 
-    header = ft.Row(
-        [
-            ft.Text("Задачи", size=26, weight=ft.FontWeight.W_700, color=TEXT, expand=True),
+    header = screen_header(
+        "Задачи",
+        subtitle="Фильтры · закреп · выбор",
+        actions=[
             select_btn,
-            ft.Container(
-                content=ft.Icon(ft.Icons.DESCRIPTION_OUTLINED, color=ORANGE, size=20),
-                width=44,
-                height=44,
-                bgcolor="#1C1C22",
-                border=ft.Border.all(1, BORDER),
-                border_radius=ft.BorderRadius.all(12),
-                alignment=ft.Alignment.CENTER,
+            header_icon_btn(
+                ft.Icons.DESCRIPTION_OUTLINED,
                 on_click=lambda e: on_open_note("tasks.md", "Задачи") if on_open_note else None,
-                ink=True,
                 tooltip="Заметка · tasks.md",
+                icon_color=ORANGE,
             ),
-            ft.Container(
-                content=ft.Icon(ft.Icons.SEARCH, color=TEXT, size=20),
-                width=44,
-                height=44,
-                bgcolor="#1C1C22",
-                border=ft.Border.all(1, BORDER),
-                border_radius=ft.BorderRadius.all(12),
-                alignment=ft.Alignment.CENTER,
+            header_icon_btn(
+                ft.Icons.SEARCH,
                 on_click=lambda e: on_open_search() if on_open_search else None,
-                ink=True,
                 tooltip="Глобальный поиск",
             ),
-            ft.Container(
-                content=ft.Icon(ft.Icons.ADD_ROUNDED, color="#0F0F12", size=22),
-                width=44,
-                height=44,
-                bgcolor=ORANGE,
-                border_radius=ft.BorderRadius.all(12),
-                alignment=ft.Alignment.CENTER,
+            header_icon_btn(
+                ft.Icons.ADD_ROUNDED,
                 on_click=lambda e: on_add(),
-                ink=True,
+                tooltip="Создать",
+                accent=True,
+                icon_size=22,
             ),
         ],
-        spacing=8,
     )
 
     root = ft.Container(
         content=ft.Column(
             [
                 header,
-                muted("Статус · метка · приоритет · сортировка · закреп · выбор"),
                 ft.Row([search], spacing=8),
-                ft.Row(status_chips, spacing=8, scroll=ft.ScrollMode.AUTO),
+                ft.Row(status_chips, spacing=8, scroll=ft.ScrollMode.AUTO, wrap=False),
                 muted("Метка"),
                 tag_row,
                 muted("Приоритет"),
@@ -552,10 +547,10 @@ def build_tasks(
                 batch_host,
                 list_col,
             ],
-            spacing=12,
+            spacing=10,
             expand=True,
         ),
-        padding=ft.Padding.only(left=16, right=16, top=18, bottom=8),
+        padding=screen_insets(),
         expand=True,
     )
     reload()

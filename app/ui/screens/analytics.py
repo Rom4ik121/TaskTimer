@@ -16,7 +16,7 @@ from app.services import analytics_service, goal_service, settings_service, stre
 from app.ui.components.cards import heatmap_grid, streak_badge_chip
 from app.ui.components.progress_ring import donut_progress
 from app.ui.components.cards import empty_illus
-from app.ui.components.dialogs import show_snack
+from app.ui.components.dialogs import show_info, show_snack
 from app.ui.theme import (
     BLUE,
     BORDER,
@@ -27,7 +27,10 @@ from app.ui.theme import (
     PURPLE,
     TEXT,
     card_style,
+    header_icon_btn,
     muted,
+    screen_header,
+    screen_insets,
 )
 
 
@@ -635,24 +638,21 @@ def build_analytics(page: ft.Page, *, refresh_all=None, on_open_focus=None, on_o
                         **card_style(),
                     )
                 )
-            page.show_dialog(
-                ft.AlertDialog(
-                    title=ft.Text("Обзор недели", color=TEXT),
-                    content=ft.Column(
-                        [
-                            muted(f"Неделя {period}"),
-                            *rows,
-                        ],
-                        spacing=10,
-                        tight=True,
-                        scroll=ft.ScrollMode.AUTO,
-                        height=340,
-                        width=300,
-                    ),
-                    actions=[
-                        ft.TextButton("Закрыть", on_click=lambda e: page.pop_dialog()),
+            show_info(
+                page,
+                title="Обзор недели",
+                content=ft.Column(
+                    [
+                        muted(f"Неделя {period}"),
+                        *rows,
                     ],
-                )
+                    spacing=10,
+                    tight=True,
+                    scroll=ft.ScrollMode.AUTO,
+                    height=340,
+                    width=300,
+                ),
+                ok_label="Закрыть",
             )
 
         week_pct = 0.0 if week_target <= 0 else min(1.0, week_done / week_target)
@@ -696,26 +696,17 @@ def build_analytics(page: ft.Page, *, refresh_all=None, on_open_focus=None, on_o
 
         root_col.controls.extend(
             [
-                ft.Row(
-                    [
-                        ft.Text(
-                            "Аналитика",
-                            size=26,
-                            weight=ft.FontWeight.W_700,
-                            color=TEXT,
-                            expand=True,
-                        ),
-                        ft.Container(
-                            content=ft.Icon(ft.Icons.DESCRIPTION_OUTLINED, color=ORANGE, size=18),
-                            width=36,
-                            height=36,
-                            bgcolor="#1C1C22",
-                            border=ft.Border.all(1, BORDER),
-                            border_radius=ft.BorderRadius.all(10),
-                            alignment=ft.Alignment.CENTER,
+                screen_header(
+                    "Статы",
+                    subtitle="Статусы, фокус, серии и активность",
+                    actions=[
+                        header_icon_btn(
+                            ft.Icons.DESCRIPTION_OUTLINED,
                             on_click=lambda e: on_open_note("analytics.md", "Аналитика") if on_open_note else None,
-                            ink=True,
                             tooltip="Заметка · analytics.md",
+                            icon_color=ORANGE,
+                            size=36,
+                            icon_size=18,
                         ),
                         ft.Container(
                             content=ft.Text(
@@ -731,9 +722,7 @@ def build_analytics(page: ft.Page, *, refresh_all=None, on_open_focus=None, on_o
                             ink=True,
                         ),
                     ],
-                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
-                muted("Статусы, фокус, серии и активность"),
                 week_goal_card,
                 review_section,
                 ft.Container(
@@ -817,6 +806,6 @@ def build_analytics(page: ft.Page, *, refresh_all=None, on_open_focus=None, on_o
     reload()
     return ft.Container(
         content=root_col,
-        padding=ft.Padding.only(left=16, right=16, top=18, bottom=8),
+        padding=screen_insets(),
         expand=True,
     )

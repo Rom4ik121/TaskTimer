@@ -1,8 +1,18 @@
 # TaskTimer — журнал изменений
 
-Кратко по волнам **A–AS** (схема SQLite → `SCHEMA_VERSION = 13`). Wave **AS** — готовность к `flet build ipa` / iPhone fullscreen.
+Кратко по волнам **A–AT** (схема SQLite → `SCHEMA_VERSION = 13`). Wave **AT** — UX-полировка Дома, тосты/модалки и валидация.
 
 Исторические волны Z–AL: SCHEMA_VERSION = 11 (без бампа до AM).
+
+## AT — UX polish: Дом, тосты, валидация
+
+- Дом: фокус на приветствии, захват, задачи; дайджесты — чипы (Брифинг / Итог / Завтра / Фокус); сворачиваемый лист «Сегодня»
+- Баннеры: максимум 2 сразу (`MAX_HOME_BANNERS`); остальные за «ещё» → Напоминания. Прогресс/heatmap остаются в Статах
+- Общий API в `dialogs.py`: `show_toast` (success/error/info/warning + undo), `show_info`, `confirm_action` / `confirm_delete`, `validation_fail` + поле `error_text`
+- Валидация RU: создать задачу/цель, настройки, PIN, заметка, холст — не молчит при пустых/неверных полях
+- Шапки Задачи / Холст / Статы / Настройки; Настройки «Защита» и длинные списки — `group_heading` + меньше шума
+- Адаптив: `screen_insets` / compact / wrap чипов; SafeArea Wave AS без изменений
+- FEATURE_COUNT 75; schema 13 без бампа; smoke Wave AT
 
 ## AS — iOS IPA ready / iPhone layout
 
